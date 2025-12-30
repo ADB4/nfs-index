@@ -19,12 +19,12 @@ def get_listings():
         LEFT JOIN makes mk ON l.make_id = mk.id
         LEFT JOIN models md ON l.model_id = md.id
         LEFT JOIN trims t ON l.trim_id = t.id
-        WHERE ($1::integer IS NULL OR l.model_id = $1)
+        WHERE (%s::integer IS NULL OR l.model_id = %s)
         ORDER BY l.sale_date DESC
-        LIMIT $2 OFFSET $3
+        LIMIT %s OFFSET %s
     """
     
-    rows = execute_query(query, (model_id, per_page, offset))
+    rows = execute_query(query, (model_id, model_id, per_page, offset))
     
     listings = []
     for row in rows:
@@ -62,7 +62,7 @@ def get_trends():
             MAX(sale_price) as max_price,
             COUNT(*) as count
         FROM listings
-        WHERE model_id = $1 AND sale_price IS NOT NULL
+        WHERE model_id = %s AND sale_price IS NOT NULL
         GROUP BY period
         ORDER BY period
     """
@@ -96,7 +96,7 @@ def get_stats():
             AVG(mileage) as avg_mileage,
             AVG(number_of_bids) as avg_bids
         FROM listings
-        WHERE model_id = $1 AND sale_price IS NOT NULL
+        WHERE model_id = %s AND sale_price IS NOT NULL
     """
     
     row = execute_query(query, (model_id,), fetch_one=True)
