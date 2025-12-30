@@ -15,9 +15,12 @@ export default function Home() {
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
   const [listings, setListings] = useState<any[]>([]);
+  const [allListings, setAllListings] = useState<any[]>([]);
   const [trends, setTrends] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [availableTrims, setAvailableTrims] = useState<string[]>([]);
+  const [selectedTrims, setSelectedTrims] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     listingsAPI.getModels().then(res => {
@@ -37,12 +40,65 @@ export default function Home() {
       analyticsAPI.getStats(selectedModel.id)
     ])
       .then(([listingsRes, trendsRes, statsRes]) => {
-        setListings(listingsRes.data.listings);
+        const fetchedListings = listingsRes.data.listings;
+        setAllListings(fetchedListings);
+        setListings(fetchedListings);
         setTrends(trendsRes.data.trends);
         setStats(statsRes.data);
+        
+        const trims = [...new Set(fetchedListings.map((l: any) => l.trim).filter(Boolean))] as string[];
+        setAvailableTrims(trims);
+        setSelectedTrims(new Set(trims));
       })
       .finally(() => setLoading(false));
   }, [selectedModel]);
+
+  useEffect(() => {
+    if (selectedTrims.size === 0) {
+      setListings([]);
+      return;
+    }
+
+    const filtered = allListings.filter(listing => 
+      !listing.trim || selectedTrims.has(listing.trim)
+    );
+    setListings(filtered);
+
+    const filteredWithPrice = filtered.filter(l => l.sale_price);
+    if (filteredWithPrice.length > 0) {
+      const prices = filteredWithPrice.map(l => l.sale_price);
+      const mileages = filteredWithPrice.filter(l => l.mileage).map(l => l.mileage);
+      const bids = filteredWithPrice.filter(l => l.number_of_bids).map(l => l.number_of_bids);
+      
+      setStats({
+        total_sales: filteredWithPrice.length,
+        avg_price: prices.reduce((a, b) => a + b, 0) / prices.length,
+        min_price: Math.min(...prices),
+        max_price: Math.max(...prices),
+        avg_mileage: mileages.length > 0 ? mileages.reduce((a, b) => a + b, 0) / mileages.length : null,
+        avg_bids: bids.length > 0 ? bids.reduce((a, b) => a + b, 0) / bids.length : null
+      });
+    } else {
+      setStats({
+        total_sales: 0,
+        avg_price: null,
+        min_price: null,
+        max_price: null,
+        avg_mileage: null,
+        avg_bids: null
+      });
+    }
+  }, [selectedTrims, allListings]);
+
+  const toggleTrim = (trim: string) => {
+    const newSelected = new Set(selectedTrims);
+    if (newSelected.has(trim)) {
+      newSelected.delete(trim);
+    } else {
+      newSelected.add(trim);
+    }
+    setSelectedTrims(newSelected);
+  };
 
   const formatCurrency = (value: number | null) => {
     if (!value) return '-';
@@ -78,6 +134,41 @@ export default function Home() {
         </select>
       </div>
 
+      {availableTrims.length > 0 && (
+        <div style={{ marginBottom: '30px' }}>
+          <label style={{ marginRight: '10px', fontWeight: '500', display: 'block', marginBottom: '10px' }}>
+            Filter by Trim:
+          </label>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            {availableTrims.map(trim => (
+              <label 
+                key={trim}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backgroundColor: selectedTrims.has(trim) ? '#3b82f6' : '#fff',
+                  color: selectedTrims.has(trim) ? '#fff' : '#000',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedTrims.has(trim)}
+                  onChange={() => toggleTrim(trim)}
+                  style={{ cursor: 'pointer' }}
+                />
+                {trim}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading && <p>Loading...</p>}
 
       {!loading && stats && (
@@ -95,14 +186,14 @@ export default function Home() {
           />
           <StatCard 
             label="Average Mileage" 
-            value={stats.avg_mileage ? `${stats.avg_mileage.toLocaleString()} mi` : '-'} 
+            value={stats.avg_mileage ? `${Math.round(stats.avg_mileage).toLocaleString()} mi` : '-'} 
           />
         </div>
       )}
 
-      {!loading && trends.length > 0 && (
+      {!loading && trends.length > 0 && listings.length > 0 && (
         <div style={{ marginBottom: '40px' }}>
-          <PriceChart data={trends} />
+          <PriceChart data={trends} listings={listings} />
         </div>
       )}
 

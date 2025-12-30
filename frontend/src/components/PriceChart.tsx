@@ -24,34 +24,71 @@ ChartJS.register(
   Filler
 );
 
-export default function PriceChart({ data }: { data: any[] }) {
+export default function PriceChart({ data, listings }: { data: any[], listings: any[] }) {
   if (!data || data.length === 0) {
     return <div>No data</div>;
   }
 
+  const calculateTrendsFromListings = () => {
+    const monthlyData = new Map();
+
+    listings.forEach(listing => {
+      if (!listing.sale_price || !listing.sale_date) return;
+
+      const date = new Date(listing.sale_date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+
+      if (!monthlyData.has(monthKey)) {
+        monthlyData.set(monthKey, []);
+      }
+      monthlyData.get(monthKey).push(listing.sale_price);
+    });
+
+    const trends = Array.from(monthlyData.entries())
+      .map(([period, prices]) => {
+        const sorted = prices.sort((a: number, b: number) => a - b);
+        return {
+          period,
+          avg_price: prices.reduce((a: any, b: any) => a + b, 0) / prices.length,
+          min_price: Math.min(...prices),
+          max_price: Math.max(...prices),
+          count: prices.length
+        };
+      })
+      .sort((a, b) => a.period.localeCompare(b.period));
+
+    return trends;
+  };
+
+  const trendsToDisplay = calculateTrendsFromListings();
+
+  if (trendsToDisplay.length === 0) {
+    return <div>No trend data available for selected trims</div>;
+  }
+
   const chartData = {
-    labels: data.map(d => {
+    labels: trendsToDisplay.map(d => {
       const date = new Date(d.period);
       return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
     }),
     datasets: [
       {
         label: 'Average Price',
-        data: data.map(d => d.avg_price),
+        data: trendsToDisplay.map(d => d.avg_price),
         borderColor: '#3b82f6',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         fill: true,
       },
       {
         label: 'Max Price',
-        data: data.map(d => d.max_price),
+        data: trendsToDisplay.map(d => d.max_price),
         borderColor: '#ef4444',
         borderDash: [5, 5],
         fill: false,
       },
       {
         label: 'Min Price',
-        data: data.map(d => d.min_price),
+        data: trendsToDisplay.map(d => d.min_price),
         borderColor: '#10b981',
         borderDash: [5, 5],
         fill: false,
@@ -61,6 +98,7 @@ export default function PriceChart({ data }: { data: any[] }) {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       title: {
         display: true,
