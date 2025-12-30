@@ -103,6 +103,8 @@ def get_trends():
         SELECT 
             DATE_TRUNC('month', sale_date) as month,
             AVG(sale_price) as avg_price,
+            MIN(sale_price) as min_price,
+            MAX(sale_price) as max_price,
             COUNT(*) as count
         FROM listings
         WHERE model_id = %s AND sale_price IS NOT NULL
@@ -116,12 +118,47 @@ def get_trends():
         trends.append({
             'period': row[0].isoformat(),
             'avg_price': float(row[1]) / 100,
-            'count': row[2]
+            'min_price': float(row[2]) / 100,
+            'max_price': float(row[3]) / 100,
+            'count': row[4]
         })
     
     cur.close()
     conn.close()
     return jsonify({'trends': trends})
+
+@app.route('/api/analytics/stats')
+def get_stats():
+    model_id = request.args.get('model_id')
+    if not model_id:
+        return jsonify({'error': 'need model_id'}), 400
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        SELECT 
+            COUNT(*) as total,
+            AVG(sale_price) as avg_price,
+            MIN(sale_price) as min_price,
+            MAX(sale_price) as max_price,
+            AVG(mileage) as avg_mileage
+        FROM listings
+        WHERE model_id = %s AND sale_price IS NOT NULL
+    """, (model_id,))
+    
+    row = cur.fetchone()
+    stats = {
+        'total_sales': row[0],
+        'avg_price': float(row[1]) / 100 if row[1] else None,
+        'min_price': float(row[2]) / 100 if row[2] else None,
+        'max_price': float(row[3]) / 100 if row[3] else None,
+        'avg_mileage': int(row[4]) if row[4] else None
+    }
+    
+    cur.close()
+    conn.close()
+    return jsonify(stats)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
