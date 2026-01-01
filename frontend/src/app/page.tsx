@@ -48,12 +48,20 @@ export default function Home() {
         
         const trims = [...new Set(fetchedListings.map((l: any) => l.trim).filter(Boolean))] as string[];
         setAvailableTrims(trims);
-        setSelectedTrims(new Set(trims));
+        if (trims.length > 0) {
+          setSelectedTrims(new Set(trims));
+        } else {
+          setSelectedTrims(new Set());
+        }
       })
       .finally(() => setLoading(false));
   }, [selectedModel]);
 
   useEffect(() => {
+    if (availableTrims.length === 0) {
+      return;
+    }
+
     if (selectedTrims.size === 0) {
       setListings([]);
       return;
@@ -88,7 +96,7 @@ export default function Home() {
         avg_bids: null
       });
     }
-  }, [selectedTrims, allListings]);
+  }, [selectedTrims, allListings, availableTrims]);
 
   const toggleTrim = (trim: string) => {
     const newSelected = new Set(selectedTrims);
@@ -191,7 +199,7 @@ export default function Home() {
         </div>
       )}
 
-      {!loading && trends.length > 0 && listings.length > 0 && (
+      {!loading && listings.length > 0 && (
         <div style={{ marginBottom: '40px' }}>
           <PriceChart data={trends} listings={listings} />
         </div>

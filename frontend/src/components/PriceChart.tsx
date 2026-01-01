@@ -25,8 +25,8 @@ ChartJS.register(
 );
 
 export default function PriceChart({ data, listings }: { data: any[], listings: any[] }) {
-  if (!data || data.length === 0) {
-    return <div>No data</div>;
+  if (!listings || listings.length === 0) {
+    return <div>No listings to display</div>;
   }
 
   const calculateTrendsFromListings = () => {
@@ -46,7 +46,6 @@ export default function PriceChart({ data, listings }: { data: any[], listings: 
 
     const trends = Array.from(monthlyData.entries())
       .map(([period, prices]) => {
-        const sorted = prices.sort((a: number, b: number) => a - b);
         return {
           period,
           avg_price: prices.reduce((a: any, b: any) => a + b, 0) / prices.length,
@@ -63,7 +62,7 @@ export default function PriceChart({ data, listings }: { data: any[], listings: 
   const trendsToDisplay = calculateTrendsFromListings();
 
   if (trendsToDisplay.length === 0) {
-    return <div>No trend data available for selected trims</div>;
+    return <div>No price data available for chart</div>;
   }
 
   const chartData = {

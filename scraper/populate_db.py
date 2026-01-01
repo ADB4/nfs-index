@@ -1,15 +1,17 @@
 """
-Ingest BaT scraped data into the NFS Index database
+Ingest BaT scraped data into the NFS Index database from json file
 
 Usage:
-    python ingest_bat_data.py
+    python3 populate_db.py --make "Mercedes-Benz" --model "SLR McLaren"
 """
 
+import json
 import sys
 import os
+import argparse
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bat_scraper import BATSeleniumScraper
+from bat_scraper import scrape_model_page
 import psycopg2
 from psycopg2.extras import execute_values
 from datetime import datetime
@@ -73,26 +75,52 @@ def get_or_create_trim(conn, model_id, trim_name):
         conn.commit()
         return cur.fetchone()[0]
 
-def extract_trim_from_title(title):
+def extract_trim_from_title(title, model_name):
     title_lower = title.lower()
+    model_lower = model_name.lower()
     
-    if '722' in title:
-        return '722 Edition'
-    elif 'roadster' in title_lower:
+    if 'slr' in model_lower and 'mclaren' in model_lower:
+        if '722' in title:
+            return '722 Edition'
+        elif 'roadster' in title_lower:
+            return 'Roadster'
+        elif 'coupe' in title_lower or 'coupé' in title_lower:
+            return 'Coupe'
+        elif 'stirling moss' in title_lower:
+            return 'Stirling Moss'
+        return 'Coupe'
+    
+    elif '911' in model_lower:
+        if 'gt3 rs' in title_lower:
+            return 'GT3 RS'
+        elif 'gt3' in title_lower:
+            return 'GT3'
+        elif 'gt2 rs' in title_lower:
+            return 'GT2 RS'
+        elif 'gt2' in title_lower:
+            return 'GT2'
+        elif 'turbo s' in title_lower:
+            return 'Turbo S'
+        elif 'turbo' in title_lower:
+            return 'Turbo'
+        elif 'carrera' in title_lower:
+            return 'Carrera'
+    
+    if 'roadster' in title_lower or 'spider' in title_lower or 'spyder' in title_lower:
         return 'Roadster'
     elif 'coupe' in title_lower or 'coupé' in title_lower:
         return 'Coupe'
-    elif 'stirling moss' in title_lower:
-        return 'Stirling Moss'
+    elif 'convertible' in title_lower or 'cabriolet' in title_lower:
+        return 'Convertible'
     
-    return 'Coupe'
+    return None
 
-def ingest_listing(conn, listing, make_id, model_id):
+def ingest_listing(conn, listing, make_id, model_id, model_name):
     with conn.cursor() as cur:
         cur.execute("SELECT id FROM listings WHERE listing_url = %s", (listing['url'],))
         existing = cur.fetchone()
         
-        trim_name = extract_trim_from_title(listing['title'])
+        trim_name = extract_trim_from_title(listing['title'], model_name)
         trim_id = get_or_create_trim(conn, model_id, trim_name)
         
         sale_price_cents = listing.get('price') * 100 if 'price' in listing else None
@@ -143,27 +171,57 @@ def ingest_listing(conn, listing, make_id, model_id):
             """, values)
             return 'inserted'
 
+"""
+gets data from json, an array of objects:
+{
+    vin: string
+    year: integer
+    make: string
+    model: string
+    trim: string
+    mileage: integer
+    price: integer
+    bids: integer
+    sold: boolean
+    endDate: datetime
+}
+"""
+def ingest_json(model):
+    with open(str.format("data/{0}_data.json", model)) as f:
+        data = json.load(f)
+    return data
+
+
+"""
+gets data from json, populates db with info
+"""
 def main():
+    parser = argparse.ArgumentParser(description='Scrape BaT and ingest into NFS Index database')
+    parser.add_argument('--make', required=True, help='Make name (e.g., Mercedes-Benz, Porsche)')
+    parser.add_argument('--model', required=True, help='Model name (e.g., SLR McLaren, 911 GT3)')
+    parser.add_argument('--json', action='store_true', help='Get data from JSON')
+    
+    args = parser.parse_args()
+    
     print("="*70)
     print("NFS Index - BaT Data Ingestion")
     print("="*70)
+    print(f"Make: {args.make}")
+    print(f"Model: {args.model}")
+    print(f"URL: {url}")
     print()
     
     print("Step 1: Scraping BringATrailer...")
     print("-"*70)
-    scraper = BATSeleniumScraper(headless=False)
-    listings = scraper.scrape_slr_mclaren(max_clicks=30)
     
+    listings = ingest_json(args.model)
+
     if not listings:
-        print("No listings scraped. Exiting.")
+        print("No listings json found. Exiting.")
         return
-    
-    print(f"\nScraped {len(listings)} listings")
-    
-    print("\n" + "="*70)
-    print("Step 2: Connecting to database...")
-    print("-"*70)
-    
+    else:
+        print(f"Successfully found {len(listings)} listings from json")
+        
     try:
         conn = get_db_connection()
         print("Connected to database")
@@ -175,11 +233,11 @@ def main():
     print("Step 3: Setting up make and model...")
     print("-"*70)
     
-    make_id = get_or_create_make(conn, "Mercedes-Benz")
-    print(f"Mercedes-Benz (ID: {make_id})")
+    make_id = get_or_create_make(conn, args.make)
+    print(f"{args.make} (ID: {make_id})")
     
-    model_id = get_or_create_model(conn, make_id, "SLR McLaren")
-    print(f"SLR McLaren (ID: {model_id})")
+    model_id = get_or_create_model(conn, make_id, args.model)
+    print(f"{args.model} (ID: {model_id})")
     
     print("\n" + "="*70)
     print("Step 4: Ingesting listings...")
@@ -191,7 +249,7 @@ def main():
     
     for i, listing in enumerate(listings, 1):
         try:
-            result = ingest_listing(conn, listing, make_id, model_id)
+            result = ingest_listing(conn, listing, make_id, model_id, args.model)
             if result == 'inserted':
                 inserted += 1
             elif result == 'updated':
@@ -209,7 +267,7 @@ def main():
     conn.close()
     
     print("\n" + "="*70)
-    print("INGESTION COMPLETE")
+    print("POPULATE COMPLETE")
     print("="*70)
     print(f"  Inserted: {inserted} new listings")
     print(f"  Updated: {updated} existing listings")

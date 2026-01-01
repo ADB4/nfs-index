@@ -1,0 +1,456 @@
+BringATrailer - Mercedes-Benz SLR McLaren Listings
+Total: 70 listings
+Scraped: 2025-12-30 16:43:37
+======================================================================
+
+1. Mercedes-Benz SLR McLaren Owners’ Edition & Roadster Books
+   URL: https://bringatrailer.com/listing/book-7/
+   Price: $2,850
+   Sale Date: 2025-12-15
+
+2. 3,900-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-19/
+   Year: 2008
+   Price: $341,000
+   Sale Date: 2025-12-05
+
+3. 294-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-11/
+   Year: 2008
+   Price: $453,000
+   Mileage: 294 miles
+   Sale Date: 2025-11-14
+
+4. 5k-Mile 2005 Mercedes-Benz SLR McLaren Edition
+   URL: https://bringatrailer.com/listing/2015-mercedes-benz-slr-mclaren-edition/
+   Year: 2005
+   Price: $525,000
+   Mileage: 5,000 miles
+   Sale Date: 2025-10-16
+
+5. 2,200-Mile 2007 Mercedes-Benz SLR McLaren 722
+   URL: https://bringatrailer.com/listing/2007-mercedes-benz-slr-mclaren-722-4/
+   Year: 2007
+   Price: $647,500
+   Sale Date: 2025-10-08
+
+6. 15k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-20-2/
+   Year: 2006
+   Price: $250,000
+   Mileage: 15,000 miles
+   Sale Date: 2025-09-26
+
+7. 13k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-17/
+   Year: 2008
+   Price: $322,000
+   Mileage: 13,000 miles
+   Sale Date: 2025-09-11
+
+8. 7k-Mile 2009 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-6/
+   Year: 2009
+   Price: $401,000
+   Mileage: 7,000 miles
+   Sale Date: 2025-08-04
+
+9. 5k-Mile 2009 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-roadster-5/
+   Year: 2009
+   Price: $410,000
+   Mileage: 5,000 miles
+   Sale Date: 2025-07-25
+
+10. 2007 Mercedes-Benz SLR McLaren 722
+   URL: https://bringatrailer.com/listing/2007-mercedes-benz-slr-mclaren-722-3/
+   Year: 2007
+   Price: $520,000
+   Sale Date: 2025-06-24
+
+11. 2,100-Kilometer 2009 Mercedes-Benz SLR McLaren 722 S Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-722-s-roadster-2/
+   Year: 2009
+   Mileage: 1,300 miles
+   Sale Date: 2025-04-03
+
+12. 6k-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-15/
+   Year: 2005
+   Price: $295,000
+   Mileage: 6,000 miles
+   Sale Date: 2025-01-03
+
+13. 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-16/
+   Year: 2005
+   Price: $300,000
+   Sale Date: 2024-11-26
+
+14. Mercedes-Benz SLR McLaren Owners’ Edition Book
+   URL: https://bringatrailer.com/listing/book-3/
+   Price: $1,700
+   Sale Date: 2024-10-28
+
+15. 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-16/
+   Year: 2008
+   Price: $268,700
+   Sale Date: 2024-08-12
+
+16. 4,800-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-21-2/
+   Year: 2006
+   Price: $299,000
+   Mileage: 4,800 miles
+   Sale Date: 2024-06-18
+
+17. Original-Owner 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-24/
+   Year: 2006
+   Price: $277,000
+   Sale Date: 2024-06-11
+
+18. 7k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-23/
+   Year: 2006
+   Price: $271,000
+   Mileage: 7,000 miles
+   Sale Date: 2024-05-30
+
+19. 19×9″ and 19×11.5″ Wheels for Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/mercedes-slr-wheels/
+   Price: $4,500
+   Sale Date: 2024-04-23
+
+20. 8k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-22/
+   Year: 2006
+   Price: $286,000
+   Mileage: 8,000 miles
+   Sale Date: 2024-04-05
+
+21. 4,800-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-21/
+   Year: 2006
+   Price: $326,000
+   Mileage: 4,800 miles
+   Sale Date: 2024-03-23
+
+22. 6k-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-14/
+   Year: 2005
+   Price: $299,000
+   Mileage: 6,000 miles
+   Sale Date: 2024-03-01
+
+23. 9k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-10-2/
+   Year: 2008
+   Price: $303,030
+   Mileage: 9,000 miles
+   Sale Date: 2024-02-19
+
+24. Mercedes-Benz SLR McLaren Owners’ Edition Book and Cocoon
+   URL: https://bringatrailer.com/listing/owners-edition-mercedes-benz-slr-mclaren-book-and-cocoon/
+   Price: $3,100
+   Sale Date: 2024-02-03
+
+25. 10k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-12/
+   Year: 2008
+   Price: $277,277
+   Mileage: 10,000 miles
+   Sale Date: 2024-01-16
+
+26. 411-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-11/
+   Year: 2008
+   Price: $449,000
+   Mileage: 411 miles
+   Sale Date: 2023-12-01
+
+27. 4,500-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-13/
+   Year: 2005
+   Price: $313,000
+   Mileage: 4,500 miles
+   Sale Date: 2023-11-10
+
+28. 8k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-10/
+   Year: 2008
+   Price: $304,000
+   Mileage: 8,000 miles
+   Sale Date: 2023-10-29
+
+29. 3,700-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-9/
+   Year: 2008
+   Price: $352,000
+   Sale Date: 2023-09-15
+
+30. 2,600-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-6/
+   Year: 2008
+   Price: $369,000
+   Sale Date: 2023-06-16
+
+31. 2,700-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-8/
+   Year: 2008
+   Price: $369,000
+   Sale Date: 2023-06-06
+
+32. 3,200-Mile 2009 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-roadster-4/
+   Year: 2009
+   Price: $411,000
+   Sale Date: 2023-05-25
+
+33. 8k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-19/
+   Year: 2006
+   Price: $357,000
+   Mileage: 8,000 miles
+   Sale Date: 2023-05-14
+
+34. 15k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-20/
+   Year: 2006
+   Price: $298,000
+   Mileage: 15,000 miles
+   Sale Date: 2023-05-02
+
+35. 2,200-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-7/
+   Year: 2008
+   Price: $438,888
+   Sale Date: 2023-04-16
+
+36. 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-12/
+   Year: 2005
+   Price: $345,000
+   Sale Date: 2023-03-30
+
+37. 9k-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-11/
+   Year: 2005
+   Price: $302,000
+   Mileage: 9,000 miles
+   Sale Date: 2023-02-12
+
+38. 5k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-10/
+   Year: 2006
+   Price: $371,000
+   Mileage: 5,000 miles
+   Sale Date: 2023-02-01
+
+39. 5k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-4/
+   Year: 2008
+   Price: $465,000
+   Mileage: 5,000 miles
+   Sale Date: 2023-01-30
+
+40. 2,700-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-15-2/
+   Year: 2006
+   Price: $371,000
+   Sale Date: 2023-01-21
+
+41. 4,300-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-9/
+   Year: 2005
+   Price: $378,777
+   Mileage: 4,300 miles
+   Sale Date: 2022-12-18
+
+42. 4,400-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-16/
+   Year: 2006
+   Price: $390,000
+   Sale Date: 2022-12-08
+
+43. 8k-Kilometer 2009 Mercedes-Benz SLR McLaren 722 S Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-722-s-roadster/
+   Year: 2009
+   Price: $750,000
+   Sale Date: 2022-12-01
+
+44. 11k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-7-2/
+   Year: 2008
+   Price: $380,000
+   Mileage: 11,000 miles
+   Sale Date: 2022-11-20
+
+45. 2,600-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-15/
+   Year: 2006
+   Price: $408,000
+   Sale Date: 2022-11-19
+
+46. 1,200-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-8/
+   Year: 2005
+   Price: $449,000
+   Sale Date: 2022-11-11
+
+47. 13k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster/
+   Year: 2008
+   Price: $283,000
+   Mileage: 13,000 miles
+   Sale Date: 2022-11-03
+
+48. 11k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-2/
+   Year: 2008
+   Price: $378,000
+   Mileage: 11,000 miles
+   Sale Date: 2022-10-24
+
+49. 8k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-14/
+   Year: 2006
+   Price: $354,000
+   Mileage: 8,000 miles
+   Sale Date: 2022-10-14
+
+50. 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-7/
+   Year: 2005
+   Price: $401,000
+   Sale Date: 2022-09-29
+
+51. 11k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-7/
+   Year: 2008
+   Price: $401,000
+   Mileage: 11,000 miles
+   Sale Date: 2022-09-18
+
+52. 946-Mile 2009 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-roadster-3/
+   Year: 2009
+   Price: $537,000
+   Sale Date: 2022-08-10
+
+53. 6,800-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-13/
+   Year: 2006
+   Price: $410,000
+   Sale Date: 2022-07-15
+
+54. 3,200-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-12/
+   Year: 2006
+   Price: $375,000
+   Sale Date: 2022-07-06
+
+55. 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-10/
+   Year: 2006
+   Price: $325,000
+   Sale Date: 2022-06-25
+
+56. 3,700-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-6/
+   Year: 2008
+   Price: $400,000
+   Sale Date: 2022-02-16
+
+57. 7k-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-5/
+   Year: 2008
+   Price: $390,000
+   Mileage: 7,000 miles
+   Sale Date: 2021-11-17
+
+58. 4k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-8/
+   Year: 2006
+   Price: $315,000
+   Mileage: 4,000 miles
+   Sale Date: 2021-11-01
+
+59. RENNtech-Tuned 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-4/
+   Year: 2008
+   Price: $383,000
+   Sale Date: 2021-10-16
+
+60. 4k-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-5/
+   Year: 2005
+   Price: $281,000
+   Mileage: 4,000 miles
+   Sale Date: 2021-10-05
+
+61. 2009 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-roadster/
+   Year: 2009
+   Price: $387,000
+   Sale Date: 2021-09-23
+
+62. 2,600-Mile 2009 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-5/
+   Year: 2009
+   Price: $450,000
+   Sale Date: 2021-08-26
+
+63. 3,400-Mile 2007 Mercedes-Benz SLR McLaren 722
+   URL: https://bringatrailer.com/listing/2007-mercedes-benz-slr-mclaren-722/
+   Year: 2007
+   Price: $605,000
+   Sale Date: 2020-12-30
+
+64. 3,600-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-2/
+   Year: 2006
+   Price: $251,000
+   Sale Date: 2020-07-27
+
+65. 2009 Mercedes-Benz SLR McLaren 722 S Roadster
+   URL: https://bringatrailer.com/listing/2009-mercedes-benz-slr-mclaren-722s-roadster/
+   Year: 2009
+   Price: $725,000
+   Sale Date: 2020-05-06
+
+66. 12k-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-3/
+   Year: 2005
+   Price: $215,000
+   Mileage: 12,000 miles
+   Sale Date: 2019-08-01
+
+67. One-Owner 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren-2/
+   Year: 2005
+   Price: $212,000
+   Sale Date: 2019-07-24
+
+68. 13k-Mile 2006 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren/
+   Year: 2006
+   Price: $192,000
+   Mileage: 13,000 miles
+   Sale Date: 2019-04-05
+
+69. 686-Mile 2005 Mercedes-Benz SLR McLaren
+   URL: https://bringatrailer.com/listing/2005-mercedes-benz-slr-mclaren/
+   Year: 2005
+   Price: $275,000
+   Mileage: 686 miles
+   Sale Date: 2018-12-27
+
+70. 12K-Mile 2008 Mercedes-Benz SLR McLaren Roadster
+   URL: https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren/
+   Year: 2008
+   Price: $252,000
+   Mileage: 12,000 miles
+   Sale Date: 2017-10-31
+

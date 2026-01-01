@@ -10,10 +10,20 @@ from bs4 import BeautifulSoup
 import time
 import re
 from datetime import datetime
+import json
+import os
 
+"""
+scrapes listings for make and model, returns in format of Listing object
+"""
 class BATSeleniumScraper:
-    def __init__(self, headless=False):
-        self.base_url = "https://bringatrailer.com"
+    def __init__(self, max_listings, make, model, write_output, headless=False):
+        self.base_url = "https://bringatrailer.com/"
+        self.max_listings = max_listings
+        self.max_clicks = 8
+        self.make = make
+        self.model = model
+        self.write_output = write_output
         chrome_options = Options()
         
         prefs = {"profile.default_content_setting_values.notifications": 2}
@@ -31,7 +41,7 @@ class BATSeleniumScraper:
         self.driver = webdriver.Chrome(service=service, options=chrome_options)
         print("Browser started\n")
     
-    def click_show_more(self, max_clicks=30):
+    def click_show_more(self, max_clicks):
         """
         Load all listings by calling Knockout.js loadNextPage() on the auctions container.
         """
@@ -107,10 +117,39 @@ class BATSeleniumScraper:
         print(f"\n{'='*70}")
         print(f"Loading complete: {final_count} listings found")
         print(f"{'='*70}\n")
-        
         return clicks
     
-    def get_model_page(self, url, max_clicks=30):
+    """
+    Listing:
+        vin: string // also called "chassis"
+        url: string
+        year: integer
+        make: string
+        model: string
+        trim: string
+        mileage: integer
+        price: integer
+        endDate: datetime
+    """
+    def scrape_listing_detail(self, url):
+        """
+        scrape detailed information from an individual listing page
+        """
+        try:
+            self.driver.get(url)
+            time.sleep(2)
+            
+            # placeholder, todo
+            # get information from page, return Listing object
+            detail_data = {}
+
+            return detail_data
+            
+        except Exception as e:
+            print(f"    Error scraping detail page: {e}")
+            return {}
+
+    def get_model_page(self, url, max_clicks, scrape_details=True):
         print(f"Loading: {url}\n")
         self.driver.get(url)
         
@@ -136,7 +175,30 @@ class BATSeleniumScraper:
         self.click_show_more(max_clicks=max_clicks)
         
         time.sleep(2)
-        return self.driver.page_source
+        html = self.driver.page_source
+        
+        print("\nParsing listing cards...")
+        listings = self.parse_page(html)
+        parsed = []
+        
+        for i, listing in enumerate(listings, 1):
+            listing_data = self.parse_listing_data(listing)
+            
+            if scrape_details:
+                if i % 10 == 0 or i == 1:
+                    print(f"  Scraping details: {i}/{len(listings)}")
+                
+                detail_data = self.scrape_listing_detail(listing['url'])
+                
+                self.driver.back()
+                time.sleep(1)
+            
+            parsed.append(detail_data)
+        
+        if scrape_details:
+            print(f"  Completed detail scraping for {len(listings)} listings")
+        
+        return parsed
     
     def parse_page(self, html):
         soup = BeautifulSoup(html, 'html.parser')
@@ -152,9 +214,12 @@ class BATSeleniumScraper:
                 if not url.startswith('http'):
                     url = f"https://bringatrailer.com{url}"
                 listings.append({'url': url, 'title': title, 'card_html': str(card)})
-        
+            if len(listings) == self.max_listings:
+                break
         return listings
     
+
+    # listing card overview, including url if scraping more detail
     def parse_listing_data(self, listing):
         soup = BeautifulSoup(listing['card_html'], 'html.parser')
         data = {'url': listing['url'], 'title': listing['title'], 'source': 'bringatrailer'}
@@ -192,33 +257,26 @@ class BATSeleniumScraper:
         
         return data
     
-    def scrape_slr_mclaren(self, max_clicks=30):
+    def scrape_model(self):
         try:
-            url = "https://bringatrailer.com/mercedes-benz/slr-mclaren/"
-            html = self.get_model_page(url, max_clicks=max_clicks)
-            
-            print("Parsing listing data...")
-            listings = self.parse_page(html)
-            parsed = [self.parse_listing_data(l) for l in listings]
-            
+            url = self.base_url + str.format("{0}/{1}/", self.make, self.model)
+            parsed = self.get_model_page(url, max_clicks=self.max_clicks)
+            # parsed is a list of Listing objects
             return parsed
         finally:
-            print("\nClosing browser...")
+            print("\nClosing browser")
             self.driver.quit()
 
-
-if __name__ == '__main__':
-    print("=" * 70)
-    print("BringATrailer Scraper - Mercedes-Benz SLR McLaren")
-    print("=" * 70)
-    print()
-
-    scraper = BATSeleniumScraper(headless=False)
-    listings = scraper.scrape_slr_mclaren(max_clicks=30)
-    
-    if listings:
+    def save_to_json(self, data):
+        json_ob = json.dumps(data, indent=4)
+        output_path = str.format("data/json/{0}_data.json", self.model)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path, "w+") as f:
+            f.write(json_ob)
+        
+    def save_to_txt(self, listings):
         print(f"\n{'='*70}")
-        print(f"Successfully scraped {len(listings)} SLR McLaren listings")
+        print(f"Successfully scraped {len(listings)} {self.model} listings")
         print(f"{'='*70}\n")
 
         sold = [l for l in listings if 'price' in l]
@@ -245,10 +303,10 @@ if __name__ == '__main__':
             print(f"\n{'='*70}")
 
         print("\nSaving results to file...")
-        filename = 'slr_mclaren_listings.txt'
+        filename = 'data/{self.model}_data.txt'
         
         with open(filename, 'w', encoding='utf-8') as f:
-            f.write(f"BringATrailer - Mercedes-Benz SLR McLaren Listings\n")
+            f.write(f"BringATrailer - {self.model} Listings\n")
             f.write(f"Total: {len(listings)} listings\n")
             f.write(f"Scraped: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write("="*70 + "\n\n")
@@ -268,6 +326,15 @@ if __name__ == '__main__':
         
         print(f"Saved to {filename}")
         print(f"\nDone")
-        
-    else:
-        print("\nNo listings found")
+
+    """
+    example
+    """
+    def scrape_slr_mclaren(self, max_clicks=30, scrape_details=False):
+        try:
+            url = "https://bringatrailer.com/mercedes-benz/slr-mclaren/"
+            parsed = self.get_model_page(url, max_clicks=max_clicks, scrape_details=scrape_details)
+            return parsed
+        finally:
+            print("\nClosing browser...")
+            self.driver.quit()
