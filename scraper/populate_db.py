@@ -1,19 +1,17 @@
 """
-Ingest BaT scraped data into the NFS Index database from json file
+Ingest BaT scraped data into the NFS Index database from JSON file
 
 Usage:
     python3 populate_db.py --make "Mercedes-Benz" --model "SLR McLaren"
+    python3 populate_db.py --make "Porsche" --model "911 GT3"
 """
 
 import json
 import sys
 import os
 import argparse
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from bat_scraper import scrape_model_page
 import psycopg2
-from psycopg2.extras import execute_values
 from datetime import datetime
 
 def get_db_connection():
@@ -127,7 +125,7 @@ def ingest_listing(conn, listing, make_id, model_id, model_name):
         
         values = {
             'listing_url': listing['url'],
-            'source': listing['source'],
+            'source': listing.get('source', 'bringatrailer'),
             'make_id': make_id,
             'model_id': model_id,
             'year': listing.get('year'),
@@ -135,10 +133,10 @@ def ingest_listing(conn, listing, make_id, model_id, model_name):
             'sale_price': sale_price_cents,
             'sale_date': listing.get('sale_date'),
             'reserve_met': True if sale_price_cents else None,
-            'number_of_bids': None,
+            'number_of_bids': listing.get('number_of_bids'),
             'mileage': listing.get('mileage'),
-            'location': None,
-            'vin': None,
+            'location': listing.get('location'),
+            'vin': listing.get('vin'),
         }
         
         if existing:
@@ -152,7 +150,10 @@ def ingest_listing(conn, listing, make_id, model_id, model_name):
                     sale_price = %(sale_price)s,
                     sale_date = %(sale_date)s,
                     reserve_met = %(reserve_met)s,
-                    mileage = %(mileage)s
+                    number_of_bids = %(number_of_bids)s,
+                    mileage = %(mileage)s,
+                    location = %(location)s,
+                    vin = %(vin)s
                 WHERE listing_url = %(listing_url)s
             """, values)
             return 'updated'
@@ -171,57 +172,61 @@ def ingest_listing(conn, listing, make_id, model_id, model_name):
             """, values)
             return 'inserted'
 
-"""
-gets data from json, an array of objects:
-{
-    vin: string
-    year: integer
-    make: string
-    model: string
-    trim: string
-    mileage: integer
-    price: integer
-    bids: integer
-    sold: boolean
-    endDate: datetime
-}
-"""
-def ingest_json(model):
-    with open(str.format("data/{0}_data.json", model)) as f:
+def load_json(model):
+    """
+    Gets data from JSON, an array of Listing objects:
+    {
+        url: string
+        title: string
+        source: string
+        vin: string
+        year: integer
+        mileage: integer
+        price: integer
+        number_of_bids: integer
+        location: string
+        sale_date: string (YYYY-MM-DD)
+    }
+    """
+    model_slug = model.lower().replace(' ', '-')
+    json_path = f"data/json/{model_slug}_data.json"
+    
+    if not os.path.exists(json_path):
+        return None
+    
+    with open(json_path) as f:
         data = json.load(f)
     return data
 
-
-"""
-gets data from json, populates db with info
-"""
 def main():
-    parser = argparse.ArgumentParser(description='Scrape BaT and ingest into NFS Index database')
+    parser = argparse.ArgumentParser(description='Populate NFS Index database from JSON')
     parser.add_argument('--make', required=True, help='Make name (e.g., Mercedes-Benz, Porsche)')
     parser.add_argument('--model', required=True, help='Model name (e.g., SLR McLaren, 911 GT3)')
-    parser.add_argument('--json', action='store_true', help='Get data from JSON')
     
     args = parser.parse_args()
     
     print("="*70)
-    print("NFS Index - BaT Data Ingestion")
+    print("NFS Index - Database Population from JSON")
     print("="*70)
     print(f"Make: {args.make}")
     print(f"Model: {args.model}")
-    print(f"URL: {url}")
     print()
     
-    print("Step 1: Scraping BringATrailer...")
+    print("Step 1: Loading JSON data...")
     print("-"*70)
     
-    listings = ingest_json(args.model)
-
+    listings = load_json(args.model)
+    
     if not listings:
-        print("No listings json found. Exiting.")
+        print(f"No JSON file found for {args.model}. Please run scrape.py first.")
         return
-    else:
-        print(f"Successfully found {len(listings)} listings from json")
-        
+    
+    print(f"Loaded {len(listings)} listings from JSON")
+    
+    print("\n" + "="*70)
+    print("Step 2: Connecting to database...")
+    print("-"*70)
+    
     try:
         conn = get_db_connection()
         print("Connected to database")
@@ -267,7 +272,7 @@ def main():
     conn.close()
     
     print("\n" + "="*70)
-    print("POPULATE COMPLETE")
+    print("POPULATION COMPLETE")
     print("="*70)
     print(f"  Inserted: {inserted} new listings")
     print(f"  Updated: {updated} existing listings")

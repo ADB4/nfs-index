@@ -1,0 +1,58 @@
+[
+    {
+        "url": "https://bringatrailer.com/listing/2006-mercedes-benz-slr-mclaren-28/",
+        "source": "bringatrailer",
+        "title": "3,300-Mile 2006 Mercedes-Benz SLR McLaren",
+        "vin": "WDDAJ76F26M000966",
+        "year": 2006,
+        "make": "mercedes-benz",
+        "model": "slr-mclaren",
+        "variant": "Standard",
+        "mileage": 3300,
+        "price": 390000,
+        "sale_date": "2025-12-31",
+        "number_of_bids": 20
+    },
+    {
+        "url": "https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-roadster-19/",
+        "source": "bringatrailer",
+        "title": "3,900-Mile 2008 Mercedes-Benz SLR McLaren Roadster",
+        "vin": "WDDAK76F58M001562",
+        "year": 2008,
+        "make": "mercedes-benz",
+        "model": "slr-mclaren",
+        "variant": "Roadster",
+        "mileage": 3900,
+        "price": 341000,
+        "sale_date": "2025-12-05",
+        "number_of_bids": 63
+    },
+    {
+        "url": "https://bringatrailer.com/listing/2008-mercedes-benz-slr-mclaren-11/",
+        "source": "bringatrailer",
+        "title": "294-Mile 2008 Mercedes-Benz SLR McLaren Roadster",
+        "vin": "WDDAK76F78M001806",
+        "year": 2008,
+        "make": "mercedes-benz",
+        "model": "slr-mclaren",
+        "variant": "Roadster",
+        "mileage": 294,
+        "price": 453000,
+        "sale_date": "2025-11-14",
+        "number_of_bids": 53
+    },
+    {
+        "url": "https://bringatrailer.com/listing/2015-mercedes-benz-slr-mclaren-edition/",
+        "source": "bringatrailer",
+        "title": "5k-Mile 2005 Mercedes-Benz SLR McLaren Edition",
+        "vin": "WDDAJ76F85M000372",
+        "year": 2005,
+        "make": "mercedes-benz",
+        "model": "slr-mclaren",
+        "variant": "Edition",
+        "mileage": 5000,
+        "price": 525000,
+        "sale_date": "2025-10-16",
+        "number_of_bids": 13
+    }
+]
