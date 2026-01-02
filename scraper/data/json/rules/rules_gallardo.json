@@ -1,0 +1,26 @@
+{
+  "engine": {
+    "5.0L V10": "5.0-Liter Even-Firing V10",
+    "5.0-Liter V10": "5.0-Liter Even-Firing V10",
+    "Twin-Turbocharged 5.0-Liter V10": "5.0-Liter Even-Firing V10, Twin-Turbo",
+    "Mid-Mounted 5.0-Liter V10": "5.0-Liter Even-Firing V10",
+    "5.2-Liter V10": "5.2-Liter Odd-Firing V10",
+    "5.2-Liter DOHC V10": "5.2-Liter Odd-Firing V10"
+  },
+  "transmission": {
+    "Gated Six-Speed Manual Transaxle": "Six-Speed Manual Transaxle",
+    "6-Speed Manual Gearbox": "Six-Speed Manual Transaxle",
+    "Six-Speed Manual Gearbox": "Six-Speed Manual Transaxle",
+    "Six-Speed Automated Transaxle": "Six-Speed E-Gear Automated Transaxle",
+    "Six-Speed E-Gear Transmission": "Six-Speed E-Gear Automated Transaxle",
+    "6-Speed E-Gear Automated Transaxle": "Six-Speed E-Gear Automated Transaxle",
+    "Six-Speed Automatic Transaxle": "Six-Speed E-Gear Automated Transaxle",
+    "E-Gear Six-Speed Automatic Transaxle": "Six-Speed E-Gear Automated Transaxle",
+    "Six-Speed E-Gear Transaxle": "Six-Speed E-Gear Automated Transaxle"
+  },
+  "variant": {
+    "LP560-4": "LP560-4 Coupe",
+    "Standard": "Coupe",
+    "Nera Coupe": "Coupe"
+  }
+}

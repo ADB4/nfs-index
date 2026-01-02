@@ -1,0 +1,18 @@
+{
+  "engine": {
+    "3.4L Flat-Six": "3.4-Liter Flat-Six"
+  },
+  "transmission": {
+    "Five-Speed Manual Gearbox": "Five-Speed Manual Transaxle",
+    "6-Speed Manual Gearbox": "Six-Speed Manual Transaxle",
+    "Six-Speed Manual Gearbox": "Six-Speed Manual Transaxle",
+    "Seven-Speed PDK Automatic Transaxle": "Seven-Speed PDK Automatic Transaxle",
+    "Seven-Speed PDK Transaxle": "Seven-Speed PDK Automatic Transaxle",
+    "5-Speed Tiptronic Automatic Gearbox": "Five-Speed Tiptronic Automatic Transaxle",
+    "Five-Speed Automatic Transaxle": "Five-Speed Tiptronic Automatic Transaxle"
+  },
+  "variant": {
+    "Standard": "Base",
+    "S Design Edition 1": "S"
+  }
+}
