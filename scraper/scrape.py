@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Scrape BringATrailer model pages')
     parser.add_argument('--make', required=True, help='Make name (e.g., Mercedes-Benz)')
     parser.add_argument('--model', required=True, help='Model name (e.g., SLR McLaren)')
-    parser.add_argument('--max-listings', type=int, default=4, help='Maximum listings to scrape')
+    parser.add_argument('--n', type=int, default=4, help='Maximum listings to scrape')
     parser.add_argument('--headless', action='store_true', help='Run in headless mode')
     
     args = parser.parse_args()
@@ -28,9 +28,9 @@ if __name__ == '__main__':
     print()
 
     scraper = BATSeleniumScraper(
-        max_listings=args.max_listings,
-        make=args.make.lower().replace(' ', '-'),
-        model=args.model.lower().replace(' ', '-'), 
+        n=args.n,
+        make=args.make,
+        model=args.model, 
         headless=args.headless
     )
     

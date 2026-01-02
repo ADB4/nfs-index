@@ -23,6 +23,7 @@ def get_db_connection():
     return psycopg2.connect(db_url)
 
 def get_or_create_make(conn, make_name):
+    make_name = make_name.upper()
     with conn.cursor() as cur:
         cur.execute("SELECT id FROM makes WHERE name = %s", (make_name,))
         result = cur.fetchone()
@@ -35,6 +36,7 @@ def get_or_create_make(conn, make_name):
         return cur.fetchone()[0]
 
 def get_or_create_model(conn, make_id, model_name):
+    model_name = model_name.upper()
     with conn.cursor() as cur:
         cur.execute(
             "SELECT id FROM models WHERE make_id = %s AND name = %s",
@@ -52,14 +54,16 @@ def get_or_create_model(conn, make_id, model_name):
         conn.commit()
         return cur.fetchone()[0]
 
-def get_or_create_trim(conn, model_id, trim_name):
-    if not trim_name:
-        return None
+def get_or_create_variant(conn, model_id, variant_name):
+    if not variant_name:
+        variant_name = "STANDARD"
+    else:
+        variant_name = variant_name.upper()
     
     with conn.cursor() as cur:
         cur.execute(
-            "SELECT id FROM trims WHERE model_id = %s AND name = %s",
-            (model_id, trim_name)
+            "SELECT id FROM variants WHERE model_id = %s AND name = %s",
+            (model_id, variant_name)
         )
         result = cur.fetchone()
         
@@ -67,107 +71,67 @@ def get_or_create_trim(conn, model_id, trim_name):
             return result[0]
         
         cur.execute(
-            "INSERT INTO trims (model_id, name) VALUES (%s, %s) RETURNING id",
-            (model_id, trim_name)
+            "INSERT INTO variants (model_id, name) VALUES (%s, %s) RETURNING id",
+            (model_id, variant_name)
         )
         conn.commit()
         return cur.fetchone()[0]
 
-def extract_trim_from_title(title, model_name):
-    title_lower = title.lower()
-    model_lower = model_name.lower()
-    
-    if 'slr' in model_lower and 'mclaren' in model_lower:
-        if '722' in title:
-            return '722 Edition'
-        elif 'roadster' in title_lower:
-            return 'Roadster'
-        elif 'coupe' in title_lower or 'coupé' in title_lower:
-            return 'Coupe'
-        elif 'stirling moss' in title_lower:
-            return 'Stirling Moss'
-        return 'Coupe'
-    
-    elif '911' in model_lower:
-        if 'gt3 rs' in title_lower:
-            return 'GT3 RS'
-        elif 'gt3' in title_lower:
-            return 'GT3'
-        elif 'gt2 rs' in title_lower:
-            return 'GT2 RS'
-        elif 'gt2' in title_lower:
-            return 'GT2'
-        elif 'turbo s' in title_lower:
-            return 'Turbo S'
-        elif 'turbo' in title_lower:
-            return 'Turbo'
-        elif 'carrera' in title_lower:
-            return 'Carrera'
-    
-    if 'roadster' in title_lower or 'spider' in title_lower or 'spyder' in title_lower:
-        return 'Roadster'
-    elif 'coupe' in title_lower or 'coupé' in title_lower:
-        return 'Coupe'
-    elif 'convertible' in title_lower or 'cabriolet' in title_lower:
-        return 'Convertible'
-    
-    return None
-
-def ingest_listing(conn, listing, make_id, model_id, model_name):
+def ingest_listing(conn, listing, make_id, model_id):
     with conn.cursor() as cur:
-        cur.execute("SELECT id FROM listings WHERE listing_url = %s", (listing['url'],))
+        cur.execute("SELECT id FROM listings WHERE url = %s", (listing['url'],))
         existing = cur.fetchone()
         
-        trim_name = extract_trim_from_title(listing['title'], model_name)
-        trim_id = get_or_create_trim(conn, model_id, trim_name)
+        variant_name = listing.get('variant', 'Standard')
+        variant_id = get_or_create_variant(conn, model_id, variant_name)
         
         sale_price_cents = listing.get('price') * 100 if 'price' in listing else None
         
         values = {
-            'listing_url': listing['url'],
+            'url': listing['url'],
             'source': listing.get('source', 'bringatrailer'),
+            'title': listing.get('title'),
+            'vin': listing.get('vin'),
+            'year': listing.get('year'),
             'make_id': make_id,
             'model_id': model_id,
-            'year': listing.get('year'),
-            'trim_id': trim_id,
+            'variant_id': variant_id,
+            'mileage': listing.get('mileage'),
             'sale_price': sale_price_cents,
             'sale_date': listing.get('sale_date'),
             'reserve_met': True if sale_price_cents else None,
             'number_of_bids': listing.get('number_of_bids'),
-            'mileage': listing.get('mileage'),
             'location': listing.get('location'),
-            'vin': listing.get('vin'),
         }
         
         if existing:
             cur.execute("""
                 UPDATE listings SET
                     source = %(source)s,
+                    title = %(title)s,
+                    vin = %(vin)s,
+                    year = %(year)s,
                     make_id = %(make_id)s,
                     model_id = %(model_id)s,
-                    year = %(year)s,
-                    trim_id = %(trim_id)s,
+                    variant_id = %(variant_id)s,
+                    mileage = %(mileage)s,
                     sale_price = %(sale_price)s,
                     sale_date = %(sale_date)s,
                     reserve_met = %(reserve_met)s,
                     number_of_bids = %(number_of_bids)s,
-                    mileage = %(mileage)s,
-                    location = %(location)s,
-                    vin = %(vin)s
-                WHERE listing_url = %(listing_url)s
+                    location = %(location)s
+                WHERE url = %(url)s
             """, values)
             return 'updated'
         else:
             cur.execute("""
                 INSERT INTO listings (
-                    listing_url, source, make_id, model_id, year, trim_id,
-                    sale_price, sale_date, reserve_met, number_of_bids,
-                    mileage, location, vin
+                    url, source, title, vin, year, make_id, model_id, variant_id,
+                    mileage, sale_price, sale_date, reserve_met, number_of_bids, location
                 ) VALUES (
-                    %(listing_url)s, %(source)s, %(make_id)s, %(model_id)s,
-                    %(year)s, %(trim_id)s, %(sale_price)s, %(sale_date)s,
-                    %(reserve_met)s, %(number_of_bids)s, %(mileage)s,
-                    %(location)s, %(vin)s
+                    %(url)s, %(source)s, %(title)s, %(vin)s, %(year)s, %(make_id)s,
+                    %(model_id)s, %(variant_id)s, %(mileage)s, %(sale_price)s,
+                    %(sale_date)s, %(reserve_met)s, %(number_of_bids)s, %(location)s
                 )
             """, values)
             return 'inserted'
@@ -177,15 +141,18 @@ def load_json(model):
     Gets data from JSON, an array of Listing objects:
     {
         url: string
-        title: string
         source: string
+        title: string
         vin: string
         year: integer
+        make: string
+        model: string
+        variant: string
         mileage: integer
         price: integer
+        sale_date: string (YYYY-MM-DD)
         number_of_bids: integer
         location: string
-        sale_date: string (YYYY-MM-DD)
     }
     """
     model_slug = model.lower().replace(' ', '-')
@@ -254,7 +221,7 @@ def main():
     
     for i, listing in enumerate(listings, 1):
         try:
-            result = ingest_listing(conn, listing, make_id, model_id, args.model)
+            result = ingest_listing(conn, listing, make_id, model_id)
             if result == 'inserted':
                 inserted += 1
             elif result == 'updated':

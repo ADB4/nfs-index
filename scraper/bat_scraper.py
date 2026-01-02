@@ -17,9 +17,9 @@ import os
 scrapes listings for make and model, returns in format of Listing object
 """
 class BATSeleniumScraper:
-    def __init__(self, max_listings, make, model, headless=False):
+    def __init__(self, n, make, model, headless=False):
         self.base_url = "https://bringatrailer.com/"
-        self.max_listings = max_listings
+        self.num_listings = n
         self.max_clicks = 1
         self.make = make
         self.model = model
@@ -330,7 +330,7 @@ class BATSeleniumScraper:
             
             if scrape_details:
                 if i % 10 == 0 or i == 1:
-                    print(f"  Scraping details: {i}/{self.max_listings}")
+                    print(f"  Scraping details: {i}/{self.num_listings}")
                 
                 detail_data = self.scrape_listing_detail(listing['url'])
                 
@@ -365,7 +365,7 @@ class BATSeleniumScraper:
                 parsed.append(ordered_data)
             else:
                 parsed.append(listing_data)
-            if len(parsed) == self.max_listings:
+            if len(parsed) == self.num_listings:
                 break
         
         if scrape_details:
@@ -441,7 +441,10 @@ class BATSeleniumScraper:
         main scraping method - returns list of Listing objects
         """
         try:
-            url = self.base_url + str.format("{0}/{1}/", self.make, self.model)
+
+            url = self.base_url + str.format("{0}/{1}/", 
+                                             self.make.lower().replace(' ', '-'), 
+                                             self.model.lower().replace(' ', '-'))
             parsed = self.get_model_page(url, max_clicks=self.max_clicks, scrape_details=True)
             return parsed
         finally:

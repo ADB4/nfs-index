@@ -13,13 +13,13 @@ def get_listings():
         offset = (page - 1) * per_page
         
         query = """
-            SELECT l.id, l.listing_url, l.source, mk.name as make, md.name as model, 
-                   l.year, t.name as trim, l.sale_price, l.sale_date, l.mileage, 
+            SELECT l.id, l.url as listing_url, l.source, mk.name as make, md.name as model, 
+                   l.year, v.name as trim, l.sale_price, l.sale_date, l.mileage, 
                    l.number_of_bids, l.location, l.reserve_met
             FROM listings l
             LEFT JOIN makes mk ON l.make_id = mk.id
             LEFT JOIN models md ON l.model_id = md.id
-            LEFT JOIN trims t ON l.trim_id = t.id
+            LEFT JOIN variants v ON l.variant_id = v.id
             WHERE (%s::integer IS NULL OR l.model_id = %s)
             ORDER BY l.sale_date DESC
             LIMIT %s OFFSET %s
