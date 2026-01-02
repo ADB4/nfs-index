@@ -1,3 +1,4 @@
+import random
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -13,16 +14,18 @@ from datetime import datetime
 import json
 import os
 
-"""
-scrapes listings for make and model, returns in format of Listing object
-"""
 class BATSeleniumScraper:
-    def __init__(self, n, make, model, headless=False):
+    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=16, headless=False):
         self.base_url = "https://bringatrailer.com/"
-        self.num_listings = n
-        self.max_clicks = 1
+        self.slugs = slugs if isinstance(slugs, list) else [slugs]
         self.make = make
-        self.model = model
+        self.model_full = model_full
+        self.model_short = model_short
+        self.min_year = min_year
+        self.max_year = max_year
+        self.max_listings = max_listings
+        self.max_clicks = 1
+        
         chrome_options = Options()
         
         prefs = {"profile.default_content_setting_values.notifications": 2}
@@ -41,16 +44,13 @@ class BATSeleniumScraper:
         print("Browser started\n")
     
     def click_show_more(self, max_clicks):
-        """
-        Load all listings by calling Knockout.js loadNextPage() on the auctions container.
-        """
         clicks = 0
         consecutive_failures = 0
         
         while clicks < max_clicks:
             try:
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(1.5)
+                time.sleep(random.uniform(1.0, 4.0))
                 
                 listings_before = len(self.driver.find_elements(By.CLASS_NAME, "listing-card"))
                 
@@ -87,7 +87,7 @@ class BATSeleniumScraper:
                 
                 if 'success' in result:
                     clicks += 1
-                    time.sleep(3)
+                    time.sleep(random.uniform(1.0, 4.0))
                     
                     for wait_attempt in range(15):
                         listings_after = len(self.driver.find_elements(By.CLASS_NAME, "listing-card"))
@@ -96,10 +96,10 @@ class BATSeleniumScraper:
                             new_count = listings_after - listings_before
                             print(f"  Click {clicks}: +{new_count} listings (total: {listings_after})")
                             consecutive_failures = 0
-                            time.sleep(1)
+                            time.sleep(random.uniform(1.0, 3.0))
                             break
                         
-                        time.sleep(1)
+                        time.sleep(random.uniform(1.0, 2.0))
                     else:
                         print(f"  Click {clicks}: No new listings loaded")
                         consecutive_failures += 1
@@ -117,25 +117,14 @@ class BATSeleniumScraper:
         print(f"Loading complete: {final_count} listings found")
         print(f"{'='*70}\n")
         return clicks
-    
+
     def scrape_listing_detail(self, url):
-        """
-        scrape detailed information from an individual listing page
-        
-        returns Listing object with:
-            vin: string
-            mileage: integer
-            location: string
-            number_of_bids: integer
-            variant: string
-        """
         try:
             self.driver.get(url)
-            time.sleep(2)
+            time.sleep(random.uniform(1.0, 3.0))
             
             detail_data = {}
             
-            # some selenium fuckery
             try:
                 essentials = self.driver.find_element(By.CLASS_NAME, "essentials")
                 
@@ -244,43 +233,59 @@ class BATSeleniumScraper:
             print(f"    Error scraping detail page: {e}")
             return {}
     
-    def extract_variant_from_title(self, title, model):
+    def extract_variant_from_title(self, title):
         """
-        extract variant from title. 
-        ex: "294-Mile 2008 Mercedes-Benz SLR McLaren Roadster" -> "Roadster"
-        returns "Standard" if no variant found.
+        Extract variant from title using model_short.
+        Pattern: {make} {model_short}{variant}
+        
+        Handles cases like:
+        - "2005 Mitsubishi Lancer Evolution VIII MR" -> variant = "MR"
+        - "2002 Mercedes-Benz CLK55 AMG Coupe" -> variant = "55 AMG Coupe"
+        - "1995 Toyota Supra Turbo 6-Speed" -> variant = "Turbo" (ignores transmission)
+        
+        Returns "Standard" if no variant found.
         """
         try:
-            title_lower = title.lower()
+            title_upper = title.upper()
+            make_upper = self.make.upper()
+            model_short_upper = self.model_short.upper()
             
-            model_parts = model.lower().replace('-', ' ').split()
-            
-            last_model_word = model_parts[-1] if model_parts else model.lower()
-            
-            last_word_index = title_lower.rfind(last_model_word)
-            
-            if last_word_index == -1:
+            make_index = title_upper.find(make_upper)
+            if make_index == -1:
                 return "Standard"
             
-            after_model_start = last_word_index + len(last_model_word)
-            after_model = title[after_model_start:].strip()
+            after_make = title[make_index + len(self.make):].strip()
+            model_index = after_make.upper().find(model_short_upper)
+            
+            if model_index == -1:
+                return "Standard"
+            
+            after_model = after_make[model_index + len(self.model_short):].strip()
             
             if not after_model:
                 return "Standard"
             
-            variant_words = after_model.split()
-            if not variant_words:
+            transmission_match = re.search(r'\d+-Speed', after_model, re.I)
+            if transmission_match:
+                variant_end = transmission_match.start()
+                variant = after_model[:variant_end].strip()
+            else:
+                variant = after_model.strip()
+            
+            if not variant:
                 return "Standard"
             
-            variant = variant_words[0]
-            
-            common_words = ['for', 'with', 'in', 'at', 'by', 'from', 'on', 'and', 'the']
-            if variant.lower() in common_words or len(variant) < 2:
-                return "Standard"
+            variant_parts = variant.split()
+            if variant_parts:
+                first_word = variant_parts[0]
+                common_words = ['for', 'with', 'in', 'at', 'by', 'from', 'on', 'and', 'the']
+                if first_word.lower() in common_words:
+                    return "Standard"
             
             return variant
             
-        except:
+        except Exception as e:
+            print(f"    Error extracting variant: {e}")
             return "Standard"
 
     def get_model_page(self, url, max_clicks, scrape_details=True):
@@ -288,7 +293,7 @@ class BATSeleniumScraper:
         self.driver.get(url)
         
         try:
-            time.sleep(2)
+            time.sleep(random.uniform(2.0, 4.0))
             from selenium.webdriver.common.keys import Keys
             from selenium.webdriver.common.action_chains import ActionChains
             ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
@@ -308,7 +313,7 @@ class BATSeleniumScraper:
         print("="*70)
         self.click_show_more(max_clicks=max_clicks)
         
-        time.sleep(2)
+        time.sleep(random.uniform(2.0, 4.0))
         html = self.driver.page_source
         
         print("\nParsing listing cards...")
@@ -319,18 +324,28 @@ class BATSeleniumScraper:
         for i, listing in enumerate(listings, 1):
             listing_data = self.parse_listing_data(listing)
             
+            if self.min_year and listing_data.get('year'):
+                if listing_data['year'] < self.min_year:
+                    skipped += 1
+                    continue
+            
+            if self.max_year and listing_data.get('year'):
+                if listing_data['year'] > self.max_year:
+                    skipped += 1
+                    continue
+            
             if 'year' in listing_data:
                 year = listing_data.pop('year')
                 listing_data['year'] = year
                 listing_data['make'] = self.make
-                listing_data['model'] = self.model
+                listing_data['model'] = self.model_full
             
-            variant = self.extract_variant_from_title(listing_data['title'], self.model)
+            variant = self.extract_variant_from_title(listing_data['title'])
             listing_data['variant'] = variant
             
             if scrape_details:
                 if i % 10 == 0 or i == 1:
-                    print(f"  Scraping details: {i}/{self.num_listings}")
+                    print(f"  Scraping details: {i}/{self.max_listings}")
                 
                 detail_data = self.scrape_listing_detail(listing['url'])
                 
@@ -360,17 +375,16 @@ class BATSeleniumScraper:
                     continue
                 
                 self.driver.back()
-                time.sleep(1)
+                time.sleep(random.uniform(1.0, 2.0))
                 
                 parsed.append(ordered_data)
             else:
                 parsed.append(listing_data)
-            if len(parsed) == self.num_listings:
-                break
-        
+            if len(parsed) == self.max_listings:
+                return parsed
         if scrape_details:
             print(f"  Completed detail scraping for {len(listings)} listings")
-            print(f"  Skipped {skipped} listings without VIN (parts/memorabilia)")
+            print(f"  Skipped {skipped} listings (no VIN or outside year range)")
             print(f"  Kept {len(parsed)} car listings")
         
         return parsed
@@ -393,9 +407,6 @@ class BATSeleniumScraper:
         return listings
     
     def parse_listing_data(self, listing):
-        """
-        parse listing card overview, including url if scraping more detail
-        """
         soup = BeautifulSoup(listing['card_html'], 'html.parser')
         data = {
             'url': listing['url'], 
@@ -436,17 +447,36 @@ class BATSeleniumScraper:
         
         return data
     
-    def scrape_model(self):
+    def scrape_all_slugs(self):
         """
-        main scraping method - returns list of Listing objects
+        Scrape listings from all slugs and combine them
         """
-        try:
-
-            url = self.base_url + str.format("{0}/{1}/", 
-                                             self.make.lower().replace(' ', '-'), 
-                                             self.model.lower().replace(' ', '-'))
-            parsed = self.get_model_page(url, max_clicks=self.max_clicks, scrape_details=True)
-            return parsed
-        finally:
-            print("\nClosing browser")
-            self.driver.quit()
+        all_listings = []
+        
+        for i, slug in enumerate(self.slugs, 1):
+            print(f"\n{'='*70}")
+            print(f"Scraping slug {i}/{len(self.slugs)}: {slug}")
+            print(f"{'='*70}\n")
+            
+            url = self.base_url + slug + "/"
+            listings = self.get_model_page(url, max_clicks=self.max_clicks, scrape_details=True)
+            all_listings.extend(listings)
+        
+        seen_urls = set()
+        unique_listings = []
+        for listing in all_listings:
+            if listing['url'] not in seen_urls:
+                seen_urls.add(listing['url'])
+                unique_listings.append(listing)
+        
+        print(f"\n{'='*70}")
+        print(f"Combined {len(all_listings)} listings from {len(self.slugs)} slug(s)")
+        print(f"Removed {len(all_listings) - len(unique_listings)} duplicates")
+        print(f"Final count: {len(unique_listings)} unique listings")
+        print(f"{'='*70}\n")
+        
+        return unique_listings
+    
+    def close(self):
+        print("\nClosing browser")
+        self.driver.quit()
