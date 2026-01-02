@@ -37,6 +37,8 @@ CREATE TABLE listings (
     make_id INTEGER REFERENCES makes(id),
     model_id INTEGER REFERENCES models(id),
     variant_id INTEGER REFERENCES variants(id),
+    engine VARCHAR(100),
+    transmission VARCHAR(100),
     mileage INTEGER,
     sale_price INTEGER,
     sale_date DATE NOT NULL,
@@ -53,7 +55,7 @@ CREATE INDEX idx_listings_year ON listings(year);
 CREATE INDEX idx_listings_sale_date ON listings(sale_date);
 CREATE INDEX idx_listings_vin ON listings(vin);
 
--- Insert initial data
+-- Insert initial data for Mercedes-Benz SLR McLaren
 INSERT INTO makes (name) VALUES ('MERCEDES-BENZ');
 
 INSERT INTO models (make_id, name) 
@@ -91,6 +93,8 @@ SELECT
     mk.name AS make,
     m.name AS model,
     v.name AS variant,
+    l.engine,
+    l.transmission,
     l.mileage,
     l.sale_price,
     l.sale_date,

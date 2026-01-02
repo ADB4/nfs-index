@@ -2,8 +2,7 @@
 Ingest BaT scraped data into the NFS Index database from JSON file
 
 Usage:
-    python3 populate_db.py --make "Mercedes-Benz" --model "SLR McLaren"
-    python3 populate_db.py --make "Porsche" --model "911 GT3"
+    python3 populate_db.py --json-file data/json/slr-mclaren_data.json
 """
 
 import json
@@ -96,6 +95,8 @@ def ingest_listing(conn, listing, make_id, model_id):
             'make_id': make_id,
             'model_id': model_id,
             'variant_id': variant_id,
+            'engine': listing.get('engine'),
+            'transmission': listing.get('transmission'),
             'mileage': listing.get('mileage'),
             'sale_price': sale_price_cents,
             'sale_date': listing.get('sale_date'),
@@ -114,6 +115,8 @@ def ingest_listing(conn, listing, make_id, model_id):
                     make_id = %(make_id)s,
                     model_id = %(model_id)s,
                     variant_id = %(variant_id)s,
+                    engine = %(engine)s,
+                    transmission = %(transmission)s,
                     mileage = %(mileage)s,
                     sale_price = %(sale_price)s,
                     sale_date = %(sale_date)s,
@@ -127,68 +130,55 @@ def ingest_listing(conn, listing, make_id, model_id):
             cur.execute("""
                 INSERT INTO listings (
                     url, source, title, vin, year, make_id, model_id, variant_id,
-                    mileage, sale_price, sale_date, reserve_met, number_of_bids, location
+                    engine, transmission, mileage, sale_price, sale_date, reserve_met,
+                    number_of_bids, location
                 ) VALUES (
                     %(url)s, %(source)s, %(title)s, %(vin)s, %(year)s, %(make_id)s,
-                    %(model_id)s, %(variant_id)s, %(mileage)s, %(sale_price)s,
-                    %(sale_date)s, %(reserve_met)s, %(number_of_bids)s, %(location)s
+                    %(model_id)s, %(variant_id)s, %(engine)s, %(transmission)s,
+                    %(mileage)s, %(sale_price)s, %(sale_date)s, %(reserve_met)s,
+                    %(number_of_bids)s, %(location)s
                 )
             """, values)
             return 'inserted'
 
-def load_json(model):
-    """
-    Gets data from JSON, an array of Listing objects:
-    {
-        url: string
-        source: string
-        title: string
-        vin: string
-        year: integer
-        make: string
-        model: string
-        variant: string
-        mileage: integer
-        price: integer
-        sale_date: string (YYYY-MM-DD)
-        number_of_bids: integer
-        location: string
-    }
-    """
-    model_slug = model.lower().replace(' ', '-')
-    json_path = f"data/json/{model_slug}_data.json"
-    
-    if not os.path.exists(json_path):
-        return None
-    
-    with open(json_path) as f:
-        data = json.load(f)
-    return data
-
 def main():
     parser = argparse.ArgumentParser(description='Populate NFS Index database from JSON')
-    parser.add_argument('--make', required=True, help='Make name (e.g., Mercedes-Benz, Porsche)')
-    parser.add_argument('--model', required=True, help='Model name (e.g., SLR McLaren, 911 GT3)')
+    parser.add_argument('--json-file', required=True, help='Path to JSON file (e.g., data/json/slr-mclaren_data.json)')
     
     args = parser.parse_args()
+    
+    if not os.path.exists(args.json_file):
+        print(f"Error: File not found: {args.json_file}")
+        return
     
     print("="*70)
     print("NFS Index - Database Population from JSON")
     print("="*70)
-    print(f"Make: {args.make}")
-    print(f"Model: {args.model}")
+    print(f"File: {args.json_file}")
     print()
     
     print("Step 1: Loading JSON data...")
     print("-"*70)
     
-    listings = load_json(args.model)
+    with open(args.json_file) as f:
+        listings = json.load(f)
     
     if not listings:
-        print(f"No JSON file found for {args.model}. Please run scrape.py first.")
+        print(f"No listings found in JSON file.")
         return
     
     print(f"Loaded {len(listings)} listings from JSON")
+    
+    first_listing = listings[0]
+    make_name = first_listing.get('make')
+    model_name = first_listing.get('model')
+    
+    if not make_name or not model_name:
+        print("Error: JSON listings must contain 'make' and 'model' fields")
+        return
+    
+    print(f"Make: {make_name}")
+    print(f"Model: {model_name}")
     
     print("\n" + "="*70)
     print("Step 2: Connecting to database...")
@@ -205,11 +195,11 @@ def main():
     print("Step 3: Setting up make and model...")
     print("-"*70)
     
-    make_id = get_or_create_make(conn, args.make)
-    print(f"{args.make} (ID: {make_id})")
+    make_id = get_or_create_make(conn, make_name)
+    print(f"{make_name} -> {make_name.upper()} (ID: {make_id})")
     
-    model_id = get_or_create_model(conn, make_id, args.model)
-    print(f"{args.model} (ID: {model_id})")
+    model_id = get_or_create_model(conn, make_id, model_name)
+    print(f"{model_name} -> {model_name.upper()} (ID: {model_id})")
     
     print("\n" + "="*70)
     print("Step 4: Ingesting listings...")

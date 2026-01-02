@@ -1,4 +1,3 @@
-import random
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -15,7 +14,7 @@ import json
 import os
 
 class BATSeleniumScraper:
-    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=16, headless=False):
+    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=4, headless=False):
         self.base_url = "https://bringatrailer.com/"
         self.slugs = slugs if isinstance(slugs, list) else [slugs]
         self.make = make
@@ -50,7 +49,7 @@ class BATSeleniumScraper:
         while clicks < max_clicks:
             try:
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(random.uniform(1.0, 4.0))
+                time.sleep(1.5)
                 
                 listings_before = len(self.driver.find_elements(By.CLASS_NAME, "listing-card"))
                 
@@ -87,7 +86,7 @@ class BATSeleniumScraper:
                 
                 if 'success' in result:
                     clicks += 1
-                    time.sleep(random.uniform(1.0, 4.0))
+                    time.sleep(3)
                     
                     for wait_attempt in range(15):
                         listings_after = len(self.driver.find_elements(By.CLASS_NAME, "listing-card"))
@@ -96,10 +95,10 @@ class BATSeleniumScraper:
                             new_count = listings_after - listings_before
                             print(f"  Click {clicks}: +{new_count} listings (total: {listings_after})")
                             consecutive_failures = 0
-                            time.sleep(random.uniform(1.0, 3.0))
+                            time.sleep(1)
                             break
                         
-                        time.sleep(random.uniform(1.0, 2.0))
+                        time.sleep(1)
                     else:
                         print(f"  Click {clicks}: No new listings loaded")
                         consecutive_failures += 1
@@ -121,7 +120,7 @@ class BATSeleniumScraper:
     def scrape_listing_detail(self, url):
         try:
             self.driver.get(url)
-            time.sleep(random.uniform(1.0, 3.0))
+            time.sleep(2)
             
             detail_data = {}
             
@@ -164,11 +163,35 @@ class BATSeleniumScraper:
                                             detail_data['mileage'] = int(float(mileage_str) * 1000)
                                         else:
                                             detail_data['mileage'] = int(mileage_str)
+                                
+                                elif 'speed' in text.lower() and 'transmission' not in detail_data:
+                                    transmission_match = re.search(
+                                        r'[\w\s-]*\b(\w+)-Speed[\w\s-]*',
+                                        text,
+                                        re.I
+                                    )
+                                    if transmission_match:
+                                        detail_data['transmission'] = transmission_match.group(0).strip()
+                                
+                                elif 'liter' in text.lower() and 'engine' not in detail_data:
+                                    engine_match = re.search(
+                                        r'(\d+\.?\d*)-Liter\s+([A-Z]\d+|V\d+|Inline-\d+|Flat-\d+|I-\d+|H-\d+|\w+)',
+                                        text,
+                                        re.I
+                                    )
+                                    if engine_match:
+                                        detail_data['engine'] = engine_match.group(0)
                     except:
                         continue
                         
             except:
                 pass
+            
+            if 'transmission' not in detail_data:
+                detail_data['transmission'] = 'N/A'
+            
+            if 'engine' not in detail_data:
+                detail_data['engine'] = 'N/A'
             
             try:
                 listing_stats = self.driver.find_element(By.ID, "listing-bid")
@@ -235,15 +258,15 @@ class BATSeleniumScraper:
     
     def extract_variant_from_title(self, title):
         """
-        Extract variant from title using model_short.
-        Pattern: {make} {model_short}{variant}
+        get variant from title using model_short.
+        pattern: {make} {model_short}{variant}
         
-        Handles cases like:
+        examples:
         - "2005 Mitsubishi Lancer Evolution VIII MR" -> variant = "MR"
         - "2002 Mercedes-Benz CLK55 AMG Coupe" -> variant = "55 AMG Coupe"
         - "1995 Toyota Supra Turbo 6-Speed" -> variant = "Turbo" (ignores transmission)
         
-        Returns "Standard" if no variant found.
+        returns "Standard" if no variant found.
         """
         try:
             title_upper = title.upper()
@@ -293,7 +316,7 @@ class BATSeleniumScraper:
         self.driver.get(url)
         
         try:
-            time.sleep(random.uniform(2.0, 4.0))
+            time.sleep(2)
             from selenium.webdriver.common.keys import Keys
             from selenium.webdriver.common.action_chains import ActionChains
             ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
@@ -313,7 +336,7 @@ class BATSeleniumScraper:
         print("="*70)
         self.click_show_more(max_clicks=max_clicks)
         
-        time.sleep(random.uniform(2.0, 4.0))
+        time.sleep(2)
         html = self.driver.page_source
         
         print("\nParsing listing cards...")
@@ -344,7 +367,7 @@ class BATSeleniumScraper:
             listing_data['variant'] = variant
             
             if scrape_details:
-                if i % 10 == 0 or i == 1:
+                if i % 4 == 0 or i == 1:
                     print(f"  Scraping details: {i}/{self.max_listings}")
                 
                 detail_data = self.scrape_listing_detail(listing['url'])
@@ -358,6 +381,8 @@ class BATSeleniumScraper:
                     'make': listing_data.get('make'),
                     'model': listing_data.get('model'),
                     'variant': listing_data.get('variant'),
+                    'engine': detail_data.get('engine'),
+                    'transmission': detail_data.get('transmission'),
                     'mileage': detail_data.get('mileage') or listing_data.get('mileage'),
                     'price': listing_data.get('price'),
                     'sale_date': listing_data.get('sale_date'),
@@ -375,12 +400,12 @@ class BATSeleniumScraper:
                     continue
                 
                 self.driver.back()
-                time.sleep(random.uniform(1.0, 2.0))
+                time.sleep(1)
                 
                 parsed.append(ordered_data)
             else:
                 parsed.append(listing_data)
-            if len(parsed) == self.max_listings:
+            if (len(parsed) == self.max_listings):
                 return parsed
         if scrape_details:
             print(f"  Completed detail scraping for {len(listings)} listings")
