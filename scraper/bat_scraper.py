@@ -14,7 +14,7 @@ import json
 import os
 
 class BATSeleniumScraper:
-    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=4, headless=False):
+    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=64, headless=False):
         self.base_url = "https://bringatrailer.com/"
         self.slugs = slugs if isinstance(slugs, list) else [slugs]
         self.make = make
@@ -23,7 +23,7 @@ class BATSeleniumScraper:
         self.min_year = min_year
         self.max_year = max_year
         self.max_listings = max_listings
-        self.max_clicks = 1
+        self.max_clicks = 3
         
         chrome_options = Options()
         
@@ -125,6 +125,13 @@ class BATSeleniumScraper:
             detail_data = {}
             
             try:
+                country_elem = self.driver.find_element(By.CLASS_NAME, "show-country-name")
+                country = country_elem.text.strip()
+                detail_data['country'] = country
+            except:
+                detail_data['country'] = None
+            
+            try:
                 essentials = self.driver.find_element(By.CLASS_NAME, "essentials")
                 
                 items = essentials.find_elements(By.CLASS_NAME, "item")
@@ -165,22 +172,26 @@ class BATSeleniumScraper:
                                             detail_data['mileage'] = int(mileage_str)
                                 
                                 elif 'speed' in text.lower() and 'transmission' not in detail_data:
+                                    # Normalize various hyphen types to standard hyphen
+                                    normalized_text = text.replace('‑', '-').replace('–', '-').replace('—', '-')
                                     transmission_match = re.search(
                                         r'[\w\s-]*\b(\w+)-Speed[\w\s-]*',
-                                        text,
+                                        normalized_text,
                                         re.I
                                     )
                                     if transmission_match:
                                         detail_data['transmission'] = transmission_match.group(0).strip()
                                 
-                                elif 'liter' in text.lower() and 'engine' not in detail_data:
+                                elif ('liter' in text.lower() or 'L' in text) and 'engine' not in detail_data:
+                                    # Normalize hyphens
+                                    normalized_text = text.replace('‑', '-').replace('–', '-').replace('—', '-')
                                     engine_match = re.search(
-                                        r'(\d+\.?\d*)-Liter\s+([A-Z]\d+|V\d+|Inline-\d+|Flat-\d+|I-\d+|H-\d+|\w+)',
-                                        text,
+                                        r'[\w\s-]*\b(\d+\.?\d*)[- ]?(?:Liter|L)\b[\w\s-]*',
+                                        normalized_text,
                                         re.I
                                     )
                                     if engine_match:
-                                        detail_data['engine'] = engine_match.group(0)
+                                        detail_data['engine'] = engine_match.group(0).strip()
                     except:
                         continue
                         
@@ -258,15 +269,15 @@ class BATSeleniumScraper:
     
     def extract_variant_from_title(self, title):
         """
-        get variant from title using model_short.
-        pattern: {make} {model_short}{variant}
+        Extract variant from title using model_short.
+        Pattern: {make} {model_short}{variant}
         
-        examples:
+        Handles cases like:
         - "2005 Mitsubishi Lancer Evolution VIII MR" -> variant = "MR"
         - "2002 Mercedes-Benz CLK55 AMG Coupe" -> variant = "55 AMG Coupe"
         - "1995 Toyota Supra Turbo 6-Speed" -> variant = "Turbo" (ignores transmission)
         
-        returns "Standard" if no variant found.
+        Returns "Standard" if no variant found.
         """
         try:
             title_upper = title.upper()
@@ -347,6 +358,11 @@ class BATSeleniumScraper:
         for i, listing in enumerate(listings, 1):
             listing_data = self.parse_listing_data(listing)
             
+            # Skip modified cars
+            if 'modified' in listing_data['title'].lower():
+                skipped += 1
+                continue
+            
             if self.min_year and listing_data.get('year'):
                 if listing_data['year'] < self.min_year:
                     skipped += 1
@@ -367,10 +383,18 @@ class BATSeleniumScraper:
             listing_data['variant'] = variant
             
             if scrape_details:
-                if i % 4 == 0 or i == 1:
+                if i % 10 == 0 or i == 1:
                     print(f"  Scraping details: {i}/{self.max_listings}")
                 
                 detail_data = self.scrape_listing_detail(listing['url'])
+                
+                # Skip non-USA listings
+                if detail_data.get('country') and detail_data['country'] != 'USA':
+                    skipped += 1
+                    print(f"    Skipped (non-USA): {listing_data['title'][:50]}... ({detail_data['country']})")
+                    self.driver.back()
+                    time.sleep(1)
+                    continue
                 
                 ordered_data = {
                     'url': listing_data.get('url'),
@@ -409,7 +433,7 @@ class BATSeleniumScraper:
                 return parsed
         if scrape_details:
             print(f"  Completed detail scraping for {len(listings)} listings")
-            print(f"  Skipped {skipped} listings (no VIN or outside year range)")
+            print(f"  Skipped {skipped} listings (no VIN, non-USA, modified, or outside year range)")
             print(f"  Kept {len(parsed)} car listings")
         
         return parsed
