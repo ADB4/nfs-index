@@ -9,7 +9,7 @@ def get_listings():
     try:
         model_id = request.args.get('model_id')
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 50, type=int)
+        per_page = request.args.get('per_page', 256, type=int)
         offset = (page - 1) * per_page
         
         query = """
