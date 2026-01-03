@@ -14,7 +14,7 @@ import json
 import os
 
 class BATSeleniumScraper:
-    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=64, headless=False):
+    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=4, headless=False):
         self.base_url = "https://bringatrailer.com/"
         self.slugs = slugs if isinstance(slugs, list) else [slugs]
         self.make = make
@@ -23,7 +23,7 @@ class BATSeleniumScraper:
         self.min_year = min_year
         self.max_year = max_year
         self.max_listings = max_listings
-        self.max_clicks = 3
+        self.max_clicks = 1
         
         chrome_options = Options()
         
@@ -117,7 +117,7 @@ class BATSeleniumScraper:
         print(f"{'='*70}\n")
         return clicks
 
-    def scrape_listing_detail(self, url):
+    def scrape_listing_detail(self, url, sale_price=None):
         try:
             self.driver.get(url)
             time.sleep(2)
@@ -134,21 +134,67 @@ class BATSeleniumScraper:
             try:
                 essentials = self.driver.find_element(By.CLASS_NAME, "essentials")
                 
-                items = essentials.find_elements(By.CLASS_NAME, "item")
-                for item in items:
+                # Get all strong tags directly in essentials (not just in items)
+                all_strongs = essentials.find_elements(By.TAG_NAME, "strong")
+                for strong in all_strongs:
                     try:
-                        strong = item.find_element(By.TAG_NAME, "strong")
-                        label = strong.text.strip().lower()
+                        label = strong.text.strip()
                         
-                        if 'location' in label:
-                            link = item.find_element(By.TAG_NAME, "a")
-                            detail_data['location'] = link.text.strip()
+                        if label == "Location":
+                            # Location link comes right after the strong tag
+                            parent = strong.find_element(By.XPATH, "..")
+                            links = parent.find_elements(By.TAG_NAME, "a")
+                            for link in links:
+                                if 'google.com/maps' in link.get_attribute('href'):
+                                    detail_data['location'] = link.text.strip()
+                                    break
                         
-                        elif 'listing details' in label:
-                            ul = item.find_element(By.TAG_NAME, "ul")
+                        elif label == "Seller":
+                            # Seller link comes right after the strong tag
+                            parent = strong.find_element(By.XPATH, "..")
+                            links = parent.find_elements(By.TAG_NAME, "a")
+                            for link in links:
+                                href = link.get_attribute('href')
+                                if href and 'bringatrailer.com/member/' in href:
+                                    detail_data['seller'] = link.text.strip()
+                                    break
+                        
+                        elif label == "Private Party or Dealer":
+                            # The value comes after ": " in the parent element's text
+                            parent = strong.find_element(By.XPATH, "..")
+                            parent_text = parent.text.strip()
+                            # Format is "Private Party or Dealer: Private Party"
+                            if ':' in parent_text:
+                                value = parent_text.split(':', 1)[1].strip()
+                                if value in ['Private Party', 'Dealer']:
+                                    detail_data['seller_type'] = value
+                        
+                        elif label == "Lot":
+                            # Lot number comes after the strong tag
+                            parent = strong.find_element(By.XPATH, "..")
+                            parent_text = parent.text.strip()
+                            lot_match = re.search(r'#?(\d+)', parent_text)
+                            if lot_match:
+                                detail_data['lot_number'] = lot_match.group(1)
+                        
+                        elif label == "Listing Details":
+                            # Get the parent element which contains the ul
+                            parent = strong.find_element(By.XPATH, "..")
+                            ul = parent.find_element(By.TAG_NAME, "ul")
                             li_elements = ul.find_elements(By.TAG_NAME, "li")
                             
+                            # Capture all listing details as an array
+                            listing_details = []
                             for li in li_elements:
+                                text = li.text.strip()
+                                if text:
+                                    listing_details.append(text)
+                            
+                            detail_data['listing_details'] = listing_details
+                            
+                            # Process listing details to extract specific fields
+                            found_exterior_color = False
+                            for idx, li in enumerate(li_elements):
                                 text = li.text.strip()
                                 
                                 if 'chassis:' in text.lower():
@@ -182,6 +228,18 @@ class BATSeleniumScraper:
                                     if transmission_match:
                                         detail_data['transmission'] = transmission_match.group(0).strip()
                                 
+                                elif 'paint' in text.lower() and 'exterior_color' not in detail_data:
+                                    # Extract full exterior color text ending with "Paint"
+                                    paint_match = re.search(r'(.+?Paint)', text, re.I)
+                                    if paint_match:
+                                        detail_data['exterior_color'] = paint_match.group(1).strip()
+                                        found_exterior_color = True
+                                        # The next item should be interior color
+                                        if idx + 1 < len(li_elements):
+                                            next_text = li_elements[idx + 1].text.strip()
+                                            if next_text:
+                                                detail_data['interior_color'] = next_text
+                                
                                 elif ('liter' in text.lower() or 'L' in text) and 'engine' not in detail_data:
                                     # Normalize hyphens
                                     normalized_text = text.replace('‑', '-').replace('–', '-').replace('—', '-')
@@ -204,6 +262,39 @@ class BATSeleniumScraper:
             if 'engine' not in detail_data:
                 detail_data['engine'] = 'N/A'
             
+            if 'exterior_color' not in detail_data:
+                detail_data['exterior_color'] = 'N/A'
+            
+            if 'interior_color' not in detail_data:
+                detail_data['interior_color'] = 'N/A'
+            
+            if 'seller' not in detail_data:
+                detail_data['seller'] = 'N/A'
+            
+            if 'seller_type' not in detail_data:
+                detail_data['seller_type'] = 'N/A'
+            
+            if 'lot_number' not in detail_data:
+                detail_data['lot_number'] = 'N/A'
+            
+            if 'high_bidder' not in detail_data:
+                detail_data['high_bidder'] = 'N/A'
+            
+            if 'location' not in detail_data:
+                detail_data['location'] = 'N/A'
+            
+            if 'vin' not in detail_data:
+                detail_data['vin'] = 'N/A'
+            
+            if 'mileage' not in detail_data:
+                detail_data['mileage'] = None
+            
+            if 'number_of_bids' not in detail_data:
+                detail_data['number_of_bids'] = None
+            
+            if 'listing_details' not in detail_data:
+                detail_data['listing_details'] = []
+            
             try:
                 listing_stats = self.driver.find_element(By.ID, "listing-bid")
                 stats_rows = listing_stats.find_elements(By.CLASS_NAME, "listing-stats-stat")
@@ -225,10 +316,92 @@ class BATSeleniumScraper:
                 pass
             
             try:
-                comment_stream = self.driver.find_element(By.CLASS_NAME, "comment-stream")
-                comments = comment_stream.find_elements(By.CLASS_NAME, "comment")
+                # Try to find high bidder, clicking "Show More" only if needed
+                max_clicks = 10  # Limit to prevent infinite loops
+                clicks = 0
                 
-                for comment in comments:
+                while clicks < max_clicks:
+                    # Check for bid-notification-link elements
+                    bid_links = self.driver.find_elements(By.CLASS_NAME, "bid-notification-link")
+                    
+                    if bid_links and sale_price:
+                        # Found bid links, now find the one that matches the sale price
+                        for bid_link in reversed(bid_links):  # Start from the end (most recent)
+                            try:
+                                # Get the parent comment-text div to find the bid amount
+                                comment_text_elem = bid_link.find_element(By.XPATH, "../..")
+                                comment_text = comment_text_elem.text.strip()
+                                
+                                # Extract bid amount from text like "USD $1,921,000 bid placed by"
+                                bid_match = re.search(r'USD\s+\$([0-9,]+)', comment_text, re.I)
+                                if bid_match:
+                                    # Remove commas and convert to int
+                                    bid_amount_str = bid_match.group(1).replace(',', '')
+                                    bid_amount = int(bid_amount_str)
+                                    
+                                    # Check if this bid matches the sale price
+                                    if bid_amount == sale_price:
+                                        high_bidder = bid_link.text.strip()
+                                        if high_bidder:
+                                            detail_data['high_bidder'] = high_bidder
+                                            break  # Found the matching high bidder
+                            except:
+                                continue
+                        
+                        # If we found a matching high bidder, break out of the while loop
+                        if 'high_bidder' in detail_data:
+                            break
+                    elif bid_links and not sale_price:
+                        # No sale price to match (reserve not met), just get the last bidder
+                        last_bid_link = bid_links[-1]
+                        high_bidder = last_bid_link.text.strip()
+                        if high_bidder:
+                            detail_data['high_bidder'] = high_bidder
+                            break
+                    
+                    # No matching bid found, try to click "Show More" to load more comments
+                    try:
+                        show_more_button = self.driver.find_element(By.ID, "comments-load-button")
+                        
+                        # Check if the button is visible and enabled
+                        if show_more_button.is_displayed() and show_more_button.is_enabled():
+                            # Scroll to button
+                            self.driver.execute_script("arguments[0].scrollIntoView(true);", show_more_button)
+                            time.sleep(0.5)
+                            
+                            # Click it
+                            show_more_button.click()
+                            clicks += 1
+                            
+                            # Wait for comments to load
+                            time.sleep(2)
+                        else:
+                            # Button not visible/enabled, all comments loaded but no matching bid found
+                            break
+                    except:
+                        # Button not found, all comments loaded but no matching bid found
+                        break
+                
+                # Fallback: if still no high_bidder, try regex extraction
+                if 'high_bidder' not in detail_data:
+                    try:
+                        comment_stream = self.driver.find_element(By.ID, "comments")
+                        all_text = comment_stream.text
+                        # Look for the last occurrence of "bid placed by"
+                        matches = re.findall(r'bid\s+placed\s+by\s+(\w+)', all_text, re.I)
+                        if matches:
+                            detail_data['high_bidder'] = matches[-1]
+                    except:
+                        pass
+                        
+            except:
+                pass
+            
+            try:
+                comment_stream = self.driver.find_element(By.ID, "comments")
+                all_comments = comment_stream.find_elements(By.CLASS_NAME, "comment")
+                
+                for comment in all_comments:
                     try:
                         if 'bypostauthor' in comment.get_attribute('class'):
                             comment_text = comment.text
@@ -355,6 +528,23 @@ class BATSeleniumScraper:
         parsed = []
         skipped = 0
         
+        # Track missing fields
+        missing_fields = {
+            'vin': 0,
+            'lot_number': 0,
+            'seller': 0,
+            'seller_type': 0,
+            'high_bidder': 0,
+            'engine': 0,
+            'transmission': 0,
+            'exterior_color': 0,
+            'interior_color': 0,
+            'mileage': 0,
+            'location': 0,
+            'number_of_bids': 0,
+            'listing_details': 0
+        }
+        
         for i, listing in enumerate(listings, 1):
             listing_data = self.parse_listing_data(listing)
             
@@ -386,7 +576,7 @@ class BATSeleniumScraper:
                 if i % 10 == 0 or i == 1:
                     print(f"  Scraping details: {i}/{self.max_listings}")
                 
-                detail_data = self.scrape_listing_detail(listing['url'])
+                detail_data = self.scrape_listing_detail(listing['url'], sale_price=listing_data.get('price'))
                 
                 # Skip non-USA listings
                 if detail_data.get('country') and detail_data['country'] != 'USA':
@@ -396,27 +586,43 @@ class BATSeleniumScraper:
                     time.sleep(1)
                     continue
                 
+                # Determine result (sold vs reserve not met)
+                result = 'Sold' if listing_data.get('price') else 'Reserve Not Met'
+                
                 ordered_data = {
-                    'url': listing_data.get('url'),
-                    'source': listing_data.get('source'),
-                    'title': listing_data.get('title'),
-                    'vin': detail_data.get('vin'),
-                    'year': listing_data.get('year'),
-                    'make': listing_data.get('make'),
-                    'model': listing_data.get('model'),
-                    'variant': listing_data.get('variant'),
-                    'engine': detail_data.get('engine'),
-                    'transmission': detail_data.get('transmission'),
-                    'mileage': detail_data.get('mileage') or listing_data.get('mileage'),
+                    'url': listing_data.get('url') or 'N/A',
+                    'source': listing_data.get('source') or 'N/A',
+                    'lot_number': detail_data.get('lot_number') or 'N/A',
+                    'seller': detail_data.get('seller') or 'N/A',
+                    'seller_type': detail_data.get('seller_type') or 'N/A',
+                    'result': result,
+                    'high_bidder': detail_data.get('high_bidder') or 'N/A',
                     'price': listing_data.get('price'),
-                    'sale_date': listing_data.get('sale_date'),
+                    'sale_date': listing_data.get('sale_date') or 'N/A',
                     'number_of_bids': detail_data.get('number_of_bids'),
-                    'location': detail_data.get('location')
+                    'title': listing_data.get('title') or 'N/A',
+                    'vin': detail_data.get('vin') or 'N/A',
+                    'year': listing_data.get('year'),
+                    'make': listing_data.get('make') or 'N/A',
+                    'model': listing_data.get('model') or 'N/A',
+                    'variant': listing_data.get('variant') or 'N/A',
+                    'engine': detail_data.get('engine') or 'N/A',
+                    'transmission': detail_data.get('transmission') or 'N/A',
+                    'exterior_color': detail_data.get('exterior_color') or 'N/A',
+                    'interior_color': detail_data.get('interior_color') or 'N/A',
+                    'mileage': detail_data.get('mileage') or listing_data.get('mileage'),
+                    'location': detail_data.get('location') or 'N/A',
+                    'listing_details': detail_data.get('listing_details') or []
                 }
                 
-                ordered_data = {k: v for k, v in ordered_data.items() if v is not None}
+                # Track missing fields (N/A or None values)
+                for field in missing_fields.keys():
+                    if field in ordered_data:
+                        value = ordered_data[field]
+                        if value == 'N/A' or value is None or (isinstance(value, list) and len(value) == 0):
+                            missing_fields[field] += 1
                 
-                if 'vin' not in ordered_data or not ordered_data['vin']:
+                if 'vin' not in ordered_data or ordered_data['vin'] == 'N/A' or not ordered_data['vin']:
                     skipped += 1
                     print(f"    Skipped (no VIN): {listing_data['title'][:50]}...")
                     self.driver.back()
@@ -435,6 +641,29 @@ class BATSeleniumScraper:
             print(f"  Completed detail scraping for {len(listings)} listings")
             print(f"  Skipped {skipped} listings (no VIN, non-USA, modified, or outside year range)")
             print(f"  Kept {len(parsed)} car listings")
+            
+            # Print missing fields summary
+            if len(parsed) > 0:
+                print(f"\n{'='*70}")
+                print("MISSING FIELDS SUMMARY")
+                print(f"{'='*70}")
+                print(f"Total listings scraped: {len(parsed)}")
+                print()
+                
+                # Sort by number of missing (highest first)
+                sorted_missing = sorted(missing_fields.items(), key=lambda x: x[1], reverse=True)
+                
+                for field, count in sorted_missing:
+                    if count > 0:
+                        percentage = (count / len(parsed)) * 100
+                        print(f"  {field:20} : {count:3} missing ({percentage:5.1f}%)")
+                
+                # Show which fields are complete
+                complete_fields = [field for field, count in sorted_missing if count == 0]
+                if complete_fields:
+                    print(f"\n  Complete fields (100%): {', '.join(complete_fields)}")
+                
+                print(f"{'='*70}\n")
         
         return parsed
     
