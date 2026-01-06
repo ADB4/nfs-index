@@ -1,23 +1,26 @@
 'use client';
 
-import { Line } from 'react-chartjs-2';
+import { Scatter } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  TimeScale,
   Title,
   Tooltip,
   Legend,
   Filler
 } from 'chart.js';
+import 'chartjs-adapter-date-fns';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  TimeScale,
   Title,
   Tooltip,
   Legend,
@@ -29,68 +32,27 @@ export default function PriceChart({ data, listings }: { data: any[], listings: 
     return <div>No listings to display</div>;
   }
 
-  const calculateTrendsFromListings = () => {
-    const monthlyData = new Map();
+  const salesData = listings
+    .filter(l => l.sale_price && l.sale_date)
+    .map(l => ({
+      x: new Date(l.sale_date),
+      y: l.sale_price
+    }))
+    .sort((a, b) => a.x.getTime() - b.x.getTime());
 
-    listings.forEach(listing => {
-      if (!listing.sale_price || !listing.sale_date) return;
-
-      const date = new Date(listing.sale_date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
-
-      if (!monthlyData.has(monthKey)) {
-        monthlyData.set(monthKey, []);
-      }
-      monthlyData.get(monthKey).push(listing.sale_price);
-    });
-
-    const trends = Array.from(monthlyData.entries())
-      .map(([period, prices]) => {
-        return {
-          period,
-          avg_price: prices.reduce((a: any, b: any) => a + b, 0) / prices.length,
-          min_price: Math.min(...prices),
-          max_price: Math.max(...prices),
-          count: prices.length
-        };
-      })
-      .sort((a, b) => a.period.localeCompare(b.period));
-
-    return trends;
-  };
-
-  const trendsToDisplay = calculateTrendsFromListings();
-
-  if (trendsToDisplay.length === 0) {
+  if (salesData.length === 0) {
     return <div>No price data available for chart</div>;
   }
 
   const chartData = {
-    labels: trendsToDisplay.map(d => {
-      const date = new Date(d.period);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-    }),
     datasets: [
       {
-        label: 'Average Price',
-        data: trendsToDisplay.map(d => d.avg_price),
+        label: 'Sale Price',
+        data: salesData,
         borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        fill: true,
-      },
-      {
-        label: 'Max Price',
-        data: trendsToDisplay.map(d => d.max_price),
-        borderColor: '#ef4444',
-        borderDash: [5, 5],
-        fill: false,
-      },
-      {
-        label: 'Min Price',
-        data: trendsToDisplay.map(d => d.min_price),
-        borderColor: '#10b981',
-        borderDash: [5, 5],
-        fill: false,
+        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+        pointRadius: 5,
+        pointHoverRadius: 7,
       },
     ],
   };
@@ -106,13 +68,34 @@ export default function PriceChart({ data, listings }: { data: any[], listings: 
       tooltip: {
         callbacks: {
           label: function(context: any) {
-            return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+            const date = new Date(context.parsed.x);
+            return [
+              `Price: $${context.parsed.y.toLocaleString()}`,
+              `Date: ${date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`
+            ];
           }
         }
       }
     },
     scales: {
+      x: {
+        type: 'time' as const,
+        time: {
+          unit: 'month',
+          displayFormats: {
+            month: 'MMM yyyy'
+          }
+        },
+        title: {
+          display: true,
+          text: 'Sale Date'
+        }
+      },
       y: {
+        title: {
+          display: true,
+          text: 'Price'
+        },
         ticks: {
           callback: function(value: any) {
             return '$' + value.toLocaleString();
@@ -124,7 +107,7 @@ export default function PriceChart({ data, listings }: { data: any[], listings: 
 
   return (
     <div style={{ height: '400px', marginBottom: '30px' }}>
-      <Line data={chartData} options={options} />
+      <Scatter data={chartData} options={options} />
     </div>
   );
 }

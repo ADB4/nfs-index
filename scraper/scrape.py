@@ -56,6 +56,7 @@ if __name__ == '__main__':
     parser.add_argument('--max-listings', type=int, default=100, help='Maximum listings to scrape per slug')
     parser.add_argument('--headless', action='store_true', help='Run in headless mode')
     parser.add_argument('--json', help='Path to JSON file containing array of car objects')
+    parser.add_argument('--fields', nargs='+', help='Specific fields to include in output JSON (e.g., --fields url title price year)')
     
     args = parser.parse_args()
     
@@ -100,7 +101,8 @@ if __name__ == '__main__':
             model_short=car_config['model_short'],
             min_year=car_config['min_year'],
             max_year=car_config['max_year'],
-            headless=args.headless
+            headless=args.headless,
+            fields=args.fields
         )
         
         try:

@@ -86,17 +86,31 @@ def ingest_listing(conn, listing, make_id, model_id):
         
         sale_price_cents = listing.get('price') * 100 if 'price' in listing else None
         
+        # Convert listing_details array to JSON string for PostgreSQL
+        listing_details_json = None
+        if 'listing_details' in listing and listing['listing_details']:
+            import json as json_lib
+            listing_details_json = json_lib.dumps(listing['listing_details'])
+        
         values = {
             'url': listing['url'],
             'source': listing.get('source', 'bringatrailer'),
+            'lot_number': listing.get('lot_number'),
+            'seller': listing.get('seller'),
+            'seller_type': listing.get('seller_type'),
+            'result': listing.get('result'),
+            'high_bidder': listing.get('high_bidder'),
             'title': listing.get('title'),
             'vin': listing.get('vin'),
             'year': listing.get('year'),
             'make_id': make_id,
             'model_id': model_id,
             'variant_id': variant_id,
+            'listing_details': listing_details_json,
             'engine': listing.get('engine'),
             'transmission': listing.get('transmission'),
+            'exterior_color': listing.get('exterior_color'),
+            'interior_color': listing.get('interior_color'),
             'mileage': listing.get('mileage'),
             'sale_price': sale_price_cents,
             'sale_date': listing.get('sale_date'),
@@ -109,14 +123,22 @@ def ingest_listing(conn, listing, make_id, model_id):
             cur.execute("""
                 UPDATE listings SET
                     source = %(source)s,
+                    lot_number = %(lot_number)s,
+                    seller = %(seller)s,
+                    seller_type = %(seller_type)s,
+                    result = %(result)s,
+                    high_bidder = %(high_bidder)s,
                     title = %(title)s,
                     vin = %(vin)s,
                     year = %(year)s,
                     make_id = %(make_id)s,
                     model_id = %(model_id)s,
                     variant_id = %(variant_id)s,
+                    listing_details = %(listing_details)s::jsonb,
                     engine = %(engine)s,
                     transmission = %(transmission)s,
+                    exterior_color = %(exterior_color)s,
+                    interior_color = %(interior_color)s,
                     mileage = %(mileage)s,
                     sale_price = %(sale_price)s,
                     sale_date = %(sale_date)s,
@@ -129,12 +151,16 @@ def ingest_listing(conn, listing, make_id, model_id):
         else:
             cur.execute("""
                 INSERT INTO listings (
-                    url, source, title, vin, year, make_id, model_id, variant_id,
-                    engine, transmission, mileage, sale_price, sale_date, reserve_met,
+                    url, source, lot_number, seller, seller_type, result, high_bidder,
+                    title, vin, year, make_id, model_id, variant_id,
+                    listing_details, engine, transmission, exterior_color, interior_color,
+                    mileage, sale_price, sale_date, reserve_met,
                     number_of_bids, location
                 ) VALUES (
-                    %(url)s, %(source)s, %(title)s, %(vin)s, %(year)s, %(make_id)s,
-                    %(model_id)s, %(variant_id)s, %(engine)s, %(transmission)s,
+                    %(url)s, %(source)s, %(lot_number)s, %(seller)s, %(seller_type)s, %(result)s, %(high_bidder)s,
+                    %(title)s, %(vin)s, %(year)s, %(make_id)s, %(model_id)s, %(variant_id)s,
+                    %(listing_details)s::jsonb, %(engine)s, %(transmission)s,
+                    %(exterior_color)s, %(interior_color)s,
                     %(mileage)s, %(sale_price)s, %(sale_date)s, %(reserve_met)s,
                     %(number_of_bids)s, %(location)s
                 )

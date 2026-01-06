@@ -8,13 +8,14 @@ from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import time
+import random
 import re
 from datetime import datetime
 import json
 import os
 
 class BATSeleniumScraper:
-    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=4, headless=False):
+    def __init__(self, slugs, make, model_full, model_short, min_year=None, max_year=None, max_listings=512, headless=False, fields=None):
         self.base_url = "https://bringatrailer.com/"
         self.slugs = slugs if isinstance(slugs, list) else [slugs]
         self.make = make
@@ -23,7 +24,8 @@ class BATSeleniumScraper:
         self.min_year = min_year
         self.max_year = max_year
         self.max_listings = max_listings
-        self.max_clicks = 1
+        self.max_clicks = 2
+        self.fields = fields  # List of fields to include in output, or None for all fields
         
         chrome_options = Options()
         
@@ -49,7 +51,7 @@ class BATSeleniumScraper:
         while clicks < max_clicks:
             try:
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(1.5)
+                time.sleep(random.uniform(1.5, 2.5))
                 
                 listings_before = len(self.driver.find_elements(By.CLASS_NAME, "listing-card"))
                 
@@ -86,7 +88,7 @@ class BATSeleniumScraper:
                 
                 if 'success' in result:
                     clicks += 1
-                    time.sleep(3)
+                    time.sleep(random.uniform(3, 4.5))
                     
                     for wait_attempt in range(15):
                         listings_after = len(self.driver.find_elements(By.CLASS_NAME, "listing-card"))
@@ -95,10 +97,10 @@ class BATSeleniumScraper:
                             new_count = listings_after - listings_before
                             print(f"  Click {clicks}: +{new_count} listings (total: {listings_after})")
                             consecutive_failures = 0
-                            time.sleep(1)
+                            time.sleep(random.uniform(1, 2))
                             break
                         
-                        time.sleep(1)
+                        time.sleep(random.uniform(1, 2))
                     else:
                         print(f"  Click {clicks}: No new listings loaded")
                         consecutive_failures += 1
@@ -120,7 +122,7 @@ class BATSeleniumScraper:
     def scrape_listing_detail(self, url, sale_price=None):
         try:
             self.driver.get(url)
-            time.sleep(2)
+            time.sleep(random.uniform(2, 3.5))
             
             detail_data = {}
             
@@ -130,6 +132,22 @@ class BATSeleniumScraper:
                 detail_data['country'] = country
             except:
                 detail_data['country'] = None
+            
+            # Check if car is a convertible
+            try:
+                # Find all category buttons (there may be multiple group-title elements)
+                category_buttons = self.driver.find_elements(By.CLASS_NAME, "group-title")
+                is_convertible = False
+                
+                for button in category_buttons:
+                    button_text = button.text.strip()
+                    if 'Convertibles' in button_text or 'Convertible' in button_text:
+                        is_convertible = True
+                        break
+                
+                detail_data['convertible'] = is_convertible
+            except:
+                detail_data['convertible'] = False
             
             try:
                 essentials = self.driver.find_element(By.CLASS_NAME, "essentials")
@@ -256,6 +274,76 @@ class BATSeleniumScraper:
             except:
                 pass
             
+            # Fallback: search listing_details for color information if not already found
+            if ('exterior_color' not in detail_data or detail_data.get('exterior_color') == 'N/A') and 'listing_details' in detail_data:
+                listing_details = detail_data['listing_details']
+                
+                # Use positive pattern matching instead of just skipping technical terms
+                
+                # Interior keywords - things that ARE interior descriptions
+                interior_keywords = [
+                    r'leather', r'cloth', r'upholstery', r'nappa', r'alcantara', 
+                    r'vinyl', r'suede', r'interior', r'seats?'
+                ]
+                
+                # Exterior color keywords - actual color names and paint-related terms
+                color_keywords = [
+                    r'white', r'black', r'red', r'blue', r'silver', r'grey', r'gray',
+                    r'green', r'yellow', r'orange', r'brown', r'gold', r'bronze',
+                    r'titanium', r'platinum', r'carbon', r'pearl', r'metallic',
+                    r'alpine', r'imola', r'laguna', r'mystic', r'estoril', r'phoenix',
+                    r'paint', r'refinished', r'repainted'
+                ]
+                
+                # Items to skip - these are NOT colors/interiors
+                skip_keywords = [
+                    r'chassis', r'miles', r'turbo', r'liter', r'speed', r'manual', r'automatic',
+                    r'differential', r'drive', r'wheel', r'transmission', r'engine', r'brake',
+                    r'exhaust', r'suspension', r'stereo', r'air', r'power', r'carfax', r'report',
+                    r'block', r'intercooler', r'intake', r'system', r'spoiler', r'wing', r'scoop',
+                    r'caliper', r'alloy', r'brembo', r'disc', r'aftermarket', r'replacement', 
+                    r'records', r'vanos', r'bearing', r'subframe', r'reinforced', r'upgraded',
+                    r'camshaft', r'radiator', r'cooling', r'oil', r'filter', r'service',
+                    r'soft top', r'hard top', r'convertible top', r'roof',  # Skip convertible tops
+                    r'sunroof', r'moonroof', r'package', r'xenon', r'headlight', r'fog',
+                    r'navigation', r'bluetooth', r'audio', r'speaker', r'heated'
+                ]
+                
+                found_exterior = None
+                found_interior = None
+                
+                for detail in listing_details:
+                    detail_lower = detail.lower()
+                    
+                    # Skip items matching skip keywords
+                    if any(re.search(pattern, detail_lower) for pattern in skip_keywords):
+                        continue
+                    
+                    # Skip if empty or too long (likely a sentence/description)
+                    if not detail.strip() or len(detail.split()) > 8:
+                        continue
+                    
+                    # Look for interior FIRST (more specific patterns)
+                    if not found_interior:
+                        if any(re.search(pattern, detail_lower) for pattern in interior_keywords):
+                            found_interior = detail.strip()
+                            continue
+                    
+                    # Look for exterior color
+                    if not found_exterior:
+                        if any(re.search(pattern, detail_lower) for pattern in color_keywords):
+                            found_exterior = detail.strip()
+                            continue
+                    
+                    # Stop if we found both
+                    if found_exterior and found_interior:
+                        break
+                
+                if found_exterior:
+                    detail_data['exterior_color'] = found_exterior
+                if found_interior:
+                    detail_data['interior_color'] = found_interior
+            
             if 'transmission' not in detail_data:
                 detail_data['transmission'] = 'N/A'
             
@@ -367,14 +455,14 @@ class BATSeleniumScraper:
                         if show_more_button.is_displayed() and show_more_button.is_enabled():
                             # Scroll to button
                             self.driver.execute_script("arguments[0].scrollIntoView(true);", show_more_button)
-                            time.sleep(0.5)
+                            time.sleep(random.uniform(0.5, 1.5))
                             
                             # Click it
                             show_more_button.click()
                             clicks += 1
                             
                             # Wait for comments to load
-                            time.sleep(2)
+                            time.sleep(random.uniform(2, 3.5))
                         else:
                             # Button not visible/enabled, all comments loaded but no matching bid found
                             break
@@ -494,13 +582,36 @@ class BATSeleniumScraper:
         except Exception as e:
             print(f"    Error extracting variant: {e}")
             return "Standard"
+    
+    def filter_fields(self, data):
+        """
+        Filter data dictionary to only include specified fields.
+        If self.fields is None, return all fields.
+        """
+        if self.fields is None:
+            return data
+        
+        filtered_data = {}
+        for field in self.fields:
+            if field in data:
+                filtered_data[field] = data[field]
+            else:
+                # Field requested but not present - skip it
+                pass
+        
+        return filtered_data
 
     def get_model_page(self, url, max_clicks, scrape_details=True):
         print(f"Loading: {url}\n")
+        
+        if self.fields:
+            print(f"Field filtering enabled: {len(self.fields)} field(s) will be included")
+            print(f"Fields: {', '.join(self.fields)}\n")
+        
         self.driver.get(url)
         
         try:
-            time.sleep(2)
+            time.sleep(random.uniform(2, 3.5))
             from selenium.webdriver.common.keys import Keys
             from selenium.webdriver.common.action_chains import ActionChains
             ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
@@ -520,7 +631,7 @@ class BATSeleniumScraper:
         print("="*70)
         self.click_show_more(max_clicks=max_clicks)
         
-        time.sleep(2)
+        time.sleep(random.uniform(2, 3.5))
         html = self.driver.page_source
         
         print("\nParsing listing cards...")
@@ -583,7 +694,7 @@ class BATSeleniumScraper:
                     skipped += 1
                     print(f"    Skipped (non-USA): {listing_data['title'][:50]}... ({detail_data['country']})")
                     self.driver.back()
-                    time.sleep(1)
+                    time.sleep(random.uniform(1, 2))
                     continue
                 
                 # Determine result (sold vs reserve not met)
@@ -606,6 +717,7 @@ class BATSeleniumScraper:
                     'make': listing_data.get('make') or 'N/A',
                     'model': listing_data.get('model') or 'N/A',
                     'variant': listing_data.get('variant') or 'N/A',
+                    'convertible': detail_data.get('convertible', False),
                     'engine': detail_data.get('engine') or 'N/A',
                     'transmission': detail_data.get('transmission') or 'N/A',
                     'exterior_color': detail_data.get('exterior_color') or 'N/A',
@@ -626,13 +738,16 @@ class BATSeleniumScraper:
                     skipped += 1
                     print(f"    Skipped (no VIN): {listing_data['title'][:50]}...")
                     self.driver.back()
-                    time.sleep(1)
+                    time.sleep(random.uniform(1, 2))
                     continue
                 
                 self.driver.back()
-                time.sleep(1)
+                time.sleep(random.uniform(1, 2))
                 
-                parsed.append(ordered_data)
+                # Filter fields if requested
+                filtered_data = self.filter_fields(ordered_data)
+                
+                parsed.append(filtered_data)
             else:
                 parsed.append(listing_data)
             if (len(parsed) == self.max_listings):
@@ -740,20 +855,35 @@ class BATSeleniumScraper:
             listings = self.get_model_page(url, max_clicks=self.max_clicks, scrape_details=True)
             all_listings.extend(listings)
         
-        seen_urls = set()
-        unique_listings = []
-        for listing in all_listings:
-            if listing['url'] not in seen_urls:
-                seen_urls.add(listing['url'])
-                unique_listings.append(listing)
-        
-        print(f"\n{'='*70}")
-        print(f"Combined {len(all_listings)} listings from {len(self.slugs)} slug(s)")
-        print(f"Removed {len(all_listings) - len(unique_listings)} duplicates")
-        print(f"Final count: {len(unique_listings)} unique listings")
-        print(f"{'='*70}\n")
-        
-        return unique_listings
+        # Only deduplicate if 'url' field is available
+        if self.fields is None or 'url' in self.fields:
+            seen_urls = set()
+            unique_listings = []
+            for listing in all_listings:
+                if 'url' in listing:  # Check if url exists in this listing
+                    if listing['url'] not in seen_urls:
+                        seen_urls.add(listing['url'])
+                        unique_listings.append(listing)
+                else:
+                    # No url field, can't deduplicate, just add it
+                    unique_listings.append(listing)
+            
+            print(f"\n{'='*70}")
+            print(f"Combined {len(all_listings)} listings from {len(self.slugs)} slug(s)")
+            print(f"Removed {len(all_listings) - len(unique_listings)} duplicates")
+            print(f"Final count: {len(unique_listings)} unique listings")
+            print(f"{'='*70}\n")
+            
+            return unique_listings
+        else:
+            # Can't deduplicate without url field
+            print(f"\n{'='*70}")
+            print(f"Combined {len(all_listings)} listings from {len(self.slugs)} slug(s)")
+            print(f"Note: Deduplication skipped (url field not requested)")
+            print(f"Final count: {len(all_listings)} listings")
+            print(f"{'='*70}\n")
+            
+            return all_listings
     
     def close(self):
         print("\nClosing browser")
