@@ -15,9 +15,6 @@ Usage:
 """
 
 def normalize_car_config(car):
-    """
-    Normalize car configuration from JSON, handling case-insensitive keys
-    """
     model_short = None
     for key in ['modelShort', 'modelSHort', 'modelshort']:
         if key in car:
@@ -57,13 +54,19 @@ if __name__ == '__main__':
     parser.add_argument('--headless', action='store_true', help='Run in headless mode')
     parser.add_argument('--json', help='Path to JSON file containing array of car objects')
     parser.add_argument('--fields', nargs='+', help='Specific fields to include in output JSON (e.g., --fields url title price year)')
+    parser.add_argument('--sort-oldest', action='store_true', help='Sort results by oldest first before scraping')
+    parser.add_argument('--append', help='Path to existing JSON file - scrape until duplicate found, save only new listings')
     
     args = parser.parse_args()
+    
+    if args.append and not os.path.exists(args.append):
+        print(f"error: append file not found: {args.append}")
+        exit(1)
     
     cars_to_scrape = []
     
     if args.json:
-        print(f"Loading cars from {args.json}...")
+        print(f"loading cars from {args.json}...")
         with open(args.json, 'r') as f:
             cars_data = json.load(f)
         
@@ -71,7 +74,7 @@ if __name__ == '__main__':
             cars_to_scrape.append(normalize_car_config(car))
     else:
         if not all([args.slug, args.make, args.model_full, args.model_short]):
-            print("Error: --slug, --make, --model-full, and --model-short are required (or use --json)")
+            print("error: --slug, --make, --model-full, and --model-short are required (or use --json)")
             exit(1)
         
         cars_to_scrape.append({
@@ -83,15 +86,17 @@ if __name__ == '__main__':
             'max_year': args.max_year
         })
     
-    print(f"\nTotal cars to scrape: {len(cars_to_scrape)}\n")
+    print(f"\ntotal cars to scrape: {len(cars_to_scrape)}\n")
     
     for idx, car_config in enumerate(cars_to_scrape, 1):
         print("=" * 70)
-        print(f"[{idx}/{len(cars_to_scrape)}] BringATrailer Scraper - {car_config['make']} {car_config['model_full']}")
+        print(f"[{idx}/{len(cars_to_scrape)}] BringATrailer scraper - {car_config['make']} {car_config['model_full']}")
         print("=" * 70)
-        print(f"Slugs: {', '.join(car_config['slugs'])}")
+        print(f"slugs: {', '.join(car_config['slugs'])}")
         if car_config['min_year']:
-            print(f"Year range: {car_config['min_year']}-{car_config['max_year'] or 'present'}")
+            print(f"year range: {car_config['min_year']}-{car_config['max_year'] or 'present'}")
+        if args.append:
+            print(f"append mode: will stop at first duplicate from {args.append}")
         print()
 
         scraper = BATSeleniumScraper(
@@ -102,27 +107,28 @@ if __name__ == '__main__':
             min_year=car_config['min_year'],
             max_year=car_config['max_year'],
             headless=args.headless,
-            fields=args.fields
+            fields=args.fields,
+            sort_oldest=args.sort_oldest,
+            append_file=args.append
         )
         
         try:
             listings = scraper.scrape_all_slugs()
-            scraper.close()
             
             if listings:
                 print(f"\n{'='*70}")
-                print(f"Successfully scraped {len(listings)} {car_config['model_full']} listings")
+                print(f"successfully scraped {len(listings)} {car_config['model_full']} listings")
                 print(f"{'='*70}\n")
                 
                 sold = [l for l in listings if 'price' in l]
                 if sold:
                     prices = [l['price'] for l in sold]
                     
-                    print("SUMMARY STATISTICS:")
-                    print(f"  Total listings: {len(listings)}")
-                    print(f"  Listings with price data: {len(sold)}")
-                    print(f"  Average sale price: ${sum(prices)/len(prices):,.0f}")
-                    print(f"  Price range: ${min(prices):,} - ${max(prices):,}")
+                    print("summary statistics:")
+                    print(f"  total listings: {len(listings)}")
+                    print(f"  listings with price data: {len(sold)}")
+                    print(f"  average sale price: ${sum(prices)/len(prices):,.0f}")
+                    print(f"  price range: ${min(prices):,} - ${max(prices):,}")
 
                     years = {}
                     for listing in sold:
@@ -131,7 +137,7 @@ if __name__ == '__main__':
                             years[year] = years.get(year, 0) + 1
                     
                     if years:
-                        print(f"\n  Sales by year:")
+                        print(f"\n  sales by year:")
                         for year in sorted(years.keys()):
                             print(f"    {year}: {years[year]} listing(s)")
                     
@@ -142,27 +148,35 @@ if __name__ == '__main__':
                             variants[variant] = variants.get(variant, 0) + 1
                     
                     if variants:
-                        print(f"\n  Sales by variant:")
+                        print(f"\n  sales by variant:")
                         for variant in sorted(variants.keys()):
                             print(f"    {variant}: {variants[variant]} listing(s)")
                     
                     print(f"\n{'='*70}")
                 
                 model_slug = car_config['slugs'][0]
-                output_path = f"data/json/{model_slug}_data.json"
+                
+                if args.append:
+                    base_name = os.path.splitext(os.path.basename(args.append))[0]
+                    output_path = f"data/json/output/raw/{base_name}_n{len(listings)}.json"
+                else:
+                    output_path = f"data/json/output/raw/{model_slug}_data.json"
+                
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 
                 with open(output_path, "w") as f:
                     json.dump(listings, f, indent=4)
                 
-                print(f"\nSaved {len(listings)} listings to {output_path}")
-                print("Done\n")
+                print(f"\nsaved {len(listings)} listings to {output_path}")
+                print("done\n")
                 
             else:
-                print("\nNo listings found\n")
+                print("\nno listings found\n")
+            
+            scraper.close()
         
         except Exception as e:
-            print(f"\nError scraping {car_config['make']} {car_config['model_full']}: {e}\n")
+            print(f"\nerror scraping {car_config['make']} {car_config['model_full']}: {e}\n")
             try:
                 scraper.close()
             except:
